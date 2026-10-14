@@ -1,0 +1,40 @@
+{
+	"title":"Assets",
+	"defaultSort": "type",
+	"include":{
+		"find":[
+			{
+				"filter":"t:Prefab t:Material t:Texture2D",
+				"folders":[
+					"Assets/"
+				]
+			}
+		]
+	},
+	"views":[
+		{
+			"key":"mt",
+			"icon":"Material Icon",
+			"label": "Materials",
+			"types": [
+				"UnityEngine.Material,UnityEngine.CoreModule"
+			]
+		},
+		{
+			"key":"pf",
+			"icon":"ViewToolMove On@2x",
+			"label": "Prefabs",
+			"types": [
+				"UnityEngine.GameObject,UnityEngine.CoreModule"
+			]
+		},
+		{
+			"key":"tx",
+			"icon":"AvatarSelector@2x",
+			"label": "Textures",
+			"types": [
+				"UnityEngine.Texture2D,UnityEngine.CoreModule"
+			]
+		}
+	]
+}
