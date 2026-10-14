@@ -11,9 +11,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using UnityEngine.UIElements;
 
 	[System.Serializable]
-#if SM_DEV
 	[UxmlElement("BKToolbarMenu", libraryPath = "Bookmarks")]
-#endif
 	[Icon("UIToolkit/Icons/ToolbarMenu.png")]
 	internal sealed partial class BKMenuButton : ToolbarMenu
 	{
