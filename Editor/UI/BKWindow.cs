@@ -146,8 +146,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				});
 			}
 			_itemList?.Rebuild();
+			// titleContent.text = _bkUser.GetDisplayTitle();
+			// titleContent.image = _bkUser.GetDisplayIcon();
 			titleContent = new GUIContent(_bkUser.GetDisplayTitle(), _bkUser.GetDisplayIcon());
-			Repaint();
+			// Repaint();
 		}
 
 		private void OnItemContext(int i)
@@ -193,7 +195,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private void OnClickLoad(ClickEvent ev)
 		{
-			var m = new GenericMenu();
+			var m = new GenericMenu
+			{
+				allowDuplicateNames = true
+			};
 
 			if (_bkUser.HasProfile)
 			{

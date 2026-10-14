@@ -61,19 +61,28 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public void Load(string path)
 		{
-			if(path == _filePath) { return; } // same file, do nothing
+			if (path == _filePath)
+			{
+				return;
+			}
 			LoadPath(path);
 		}
 
 		public void Reload()
 		{
-			if(_filePath == null) { return; } // why reload, nothing is set
+			if (string.IsNullOrEmpty(_filePath))
+			{
+				return;
+			}
 			LoadPath(_filePath); // load from scratch
 		}
 
 		public void Edit()
 		{
-			if(_filePath == null) { return;  }
+			if (_filePath == null)
+			{
+				return;
+			}
 			BKUtils.OpenProjectFile(_filePath);
 		}
 
@@ -242,7 +251,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			// reset lazy loading
 			_getFn = InitBK;
 		}
-
 
 		// note: getters are static so they can be used to init getter field
 
