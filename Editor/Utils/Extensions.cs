@@ -2,39 +2,22 @@
 
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
-	using System.Threading;
-	using System.Text;
+	using System.Text.RegularExpressions;
 
 	/// <summary>
 	/// Bookmark extensions
 	/// </summary>
 	internal static class Bookmarks_
 	{
-		public static string SnakeToPascal(this string str)
+		public static bool IsGUID(this string str)
 		{
-			string titleCase = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(str.Replace('_', ' '));
-			return titleCase.Replace(" ", string.Empty);
+			return str is { Length:32 }
+			&& _GUID_REGEX.IsMatch(str);
 		}
 
 		// shorthand for string.IsNullOrEmpty(s)
 		public static bool IsNullOrEmpty(this string s) => string.IsNullOrEmpty(s);
 
-		public static string ToSentence(this string s)
-		{
-			var sb = new StringBuilder();
-			for(var i = 0; i < s.Length; i++)
-			{
-				var c = s[i];
-				if(i > 0)
-				{
-					if (char.IsLower(s[i - 1]) && char.IsUpper(s[i]))
-					{
-						sb.Append(" ");
-					}
-				}
-				sb.Append(c);
-			}
-			return sb.ToString();
-		}
+		private static readonly Regex _GUID_REGEX = new ("^([a-f]|[0-9]){32}$");
 	}
 }

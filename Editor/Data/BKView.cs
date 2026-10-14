@@ -1,7 +1,5 @@
 // smidgens @ github
 
-#pragma warning disable 0414
-
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
 	using Newtonsoft.Json;
@@ -9,8 +7,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using System;
 	using System.Linq;
 	using UnityEngine;
-	using ADB = UnityEditor.AssetDatabase;
-	using UnityEditor.Experimental.GraphView;
 
 	/// <summary>
 	/// Filters out assets covered by bookmarks profile
@@ -19,71 +15,41 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	[JsonObject(MemberSerialization.OptIn)]	
 	internal sealed class BKView
 	{
-		/// <summary>
-		/// Optional display icon
-		/// </summary>
-		public GUIContent Icon => _icon.Value;
+		// optional display icon
+		public Texture Icon => _icon.Value;
 
-		//[JsonProperty("sort")]
-		//public BKSort Sort { get; private set; } = BKSort.Default;
-
-		/// <summary>
-		/// Filter ID, used to persist settings
-		/// </summary>
-		public string Key => _id ?? Label;
-		/// <summary>
-		/// Display name
-		/// </summary>
-		[JsonProperty("label")]
-		public string Label { get; private set; }
-
-		/// <summary>
-		/// ID of view to use
-		/// </summary>
-		[JsonProperty("id")]
-		private string _id = null;
-		
-		/// <summary>
-		/// GUID of display icon for view
-		/// </summary>
-		[JsonProperty("icon")]
-		private string _iconGUID = null;
-
-		/// <summary>
-		/// Base types to include
-		/// </summary>
-		[JsonProperty("types")]
-		private string[] _typePaths = new string[0];
-
-		/// <summary>
-		/// Path wildcards
-		/// </summary>
-		[JsonProperty("paths")]
-		private string[] _pathPatterns = new string[0];
-
-		// lazily loaded icon asset
-		private Lazy<GUIContent> _icon = null;
-		private Lazy<Type[]> _types = null;
-		private Lazy<Regex[]> _paths = null;
-
-		[JsonProperty("sort")]
-		private string _sortKey = "name";
-
-		//[JsonProperty("defaultSort")]
 		public BKSort Sort => _sort.Value;
 
-		private Lazy<BKSort> _sort = null;
+		// view key, serialized
+		public string Key => _key ?? Label;
+	
+		// display name
+		[JsonProperty("label")] public string Label { get; private set; }
+
+		// Display key
+		[JsonProperty("key")] private string _key;
+		
+		// GUID of display icon for view
+		[JsonProperty("icon")] private string _iconGUID;
+
+		// Base types to include
+		[JsonProperty("types")] private string[] _typePaths = Array.Empty<string>();
+
+		// Path wildcards
+		[JsonProperty("paths")] private string[] _pathPatterns = Array.Empty<string>();
+
+		// lazily loaded icon asset
+		private Lazy<Texture> _icon;
+		private Lazy<Type[]> _types;
+		private Lazy<Regex[]> _paths;
+
+		[JsonProperty("sort")] private string _sortKey = "name";
+
+		private Lazy<BKSort> _sort;
 
 		public BKView()
 		{
-			_icon = new(() =>
-			{
-				if (string.IsNullOrEmpty(_iconGUID)) { return null; }
-				var p = ADB.GUIDToAssetPath(_iconGUID);
-				if (p == null) { return null; }
-				var img = ADB.LoadAssetAtPath<Texture2D>(p);
-				return new GUIContent(img);
-			});
+			_icon = new(() => BKUtils.LoadTexture(_iconGUID));
 
 			_types = new(() =>
 			{
@@ -100,7 +66,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				.Where(p => p!= null)
 				.ToArray();
 			});
-
 			_sort = new(() => _sortKey);
 		}
 

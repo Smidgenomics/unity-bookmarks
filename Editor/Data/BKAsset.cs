@@ -100,23 +100,9 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private UObject LoadAsset() => AssetDatabase.LoadAssetAtPath<UObject>(_assetPath.Value);
 		private Type LoadAssetType() => AssetDatabase.GetMainAssetTypeAtPath(AssetPath);
 		private string LoadAssetPath() => AssetDatabase.GUIDToAssetPath(GUID);
-		private string LoadFileName() => NameFromPath(_assetPath.Value);
+		private string LoadFileName() => BKUtils.FileNameFromPath(_assetPath.Value);
 		private long LoadFileSize() => GetFileSize(_assetPath.Value);
 		private Texture LoadIcon() => AssetDatabase.GetCachedIcon(_assetPath.Value);
-
-		private static string NameFromPath(string path)
-		{
-			if (path is { Length:0 })
-			{
-				return null;
-			}
-			// saves us having to load object just to get its name
-			// but we don't know if object has been deleted
-			var sepIndex = path.LastIndexOf('/');
-			var extIndex = path.LastIndexOf('.');
-			var len = extIndex - sepIndex - 1;
-			return path.Substring(sepIndex + 1, len);
-		}
 
 		private static long GetFileSize(string path)
 		{

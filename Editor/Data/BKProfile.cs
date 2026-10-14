@@ -20,7 +20,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using System.Collections.Generic;
 	using System.IO;
 	using UnityEngine;
-	using UnityEditor;
 
 	/// <summary>
 	/// Bookmarks file
@@ -62,17 +61,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public BKProfile()
 		{
-			_icon = new(() =>
-			{
-				if (_iconGUID.IsNullOrEmpty())
-				{
-					return null;
-				}
-				// maybe: some kind of alias provider
-				var path = AssetDatabase.GUIDToAssetPath(_iconGUID);
-				var ico = AssetDatabase.LoadAssetAtPath<Texture>(path);
-				return ico ? new GUIContent(ico) : null;
-			});
+			_icon = new(() => BKUtils.LoadTexture(_iconGUID));
 			_sort = new(() => _sortKey);
 		}
 
@@ -113,7 +102,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private static void FindBookmarks(string dir, List<string> paths)
 		{
-			var files = Helpers.ListFiles(dir, FILE_PATTERN, true);
+			var files = BKUtils.ListFiles(dir, FILE_PATTERN, true);
 			foreach (var uf in files)
 			{
 				paths.Add(uf.Replace(@"\", "/"));
@@ -144,26 +133,14 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 		}
 
-		public string GetDisplayTitleOrDefault()
+		public string GetDisplayTitle()
 		{
-			if (!Title.IsNullOrEmpty())
+			if (Title.IsNullOrEmpty())
 			{
-				return Title;
+				var fileName = BKUtils.FileNameFromPath(ProjectPath, true);
+				return fileName[..fileName.IndexOf('.')];
 			}
-			var path = ProjectPath;
-			if (path.IsNullOrEmpty())
-			{
-				return null;
-			}
-			// slice off file extension
-			var i = path.Length - FILE_EXT.Length; 
-
-			// find start of file name
-			for (; i >= 0 && !(path[i] == '/' || path[i] == '\\'); i--) { }
-			
-			var fname = path.Substring(i + 1, path.Length - i - 9); // 9 = .bk.json
-			// ideally optimize/simplify this crap (string builder or all-in-one regex)
-			return fname.ToLower().SnakeToPascal().ToSentence();
+			return Title;
 		}
 
 		// Relative path from project folder
@@ -184,14 +161,13 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		[JsonProperty("views")] public BKView[] Views { get; private set; } = Array.Empty<BKView>();
 		
 		// Assets to include
-		[JsonProperty("include")]
-		public BKInclude Include { get; private set; } = new ();
+		[JsonProperty("include")] public BKInclude Include { get; private set; } = new ();
 
 		// GUID of display icon for view
 		[JsonProperty("icon")] private string _iconGUID;
 
-		public GUIContent Icon => _icon?.Value;
-		private Lazy<GUIContent> _icon;
+		public Texture Icon => _icon?.Value;
+		private Lazy<Texture> _icon;
 		private Lazy<BKSort> _sort;
 
 		public IBKReader GetReader()

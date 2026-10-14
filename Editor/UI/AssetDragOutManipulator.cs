@@ -1,7 +1,5 @@
 // smidgens @ github
 
-#pragma warning disable 0414
-
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
 	using UnityEngine;

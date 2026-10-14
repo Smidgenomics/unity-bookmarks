@@ -180,7 +180,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 			var data = _viewData.items[i];
 			var a = data.asset;
-			var sz = Helpers.GetFileSizeLabel(a.FileSize);
+			var sz = BKUtils.FormatFileSize(a.FileSize);
 			var txt = $"{a.AssetPath} // {sz}";
 			_viewData.footerText = txt;
 			Selection.activeObject = a?.Asset;

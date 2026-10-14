@@ -1,12 +1,9 @@
 // smidgens @ github
 
-#pragma warning disable 0414
-
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
 	using System;
 	using UnityEngine;
-	using UnityEditor;
 	using System.Linq;
 	using System.Collections.Generic;
 
@@ -36,7 +33,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			Profile?.RemoveGUID(guid);
 		}
 
-		public bool HasViews => ViewCount > 0;
 		public bool HasProfile => Profile is { IsInvalid: false };
 		public string ProfilePath => _filePath;
 
@@ -53,7 +49,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public BKView CurrentView => GetCurrentView();
 
-		public IEnumerable<BKView> Views => ViewCount > 0 ? Profile.Views : Enumerable.Empty<BKView>();
+		public IEnumerable<BKView> Views => ViewCount > 0 ? Profile.Views : Array.Empty<BKView>();
 
 		public string View
 		{
@@ -78,25 +74,23 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public void Edit()
 		{
 			if(_filePath == null) { return;  }
-			Helpers.OpenProjectFile(_filePath);
+			BKUtils.OpenProjectFile(_filePath);
 		}
 
 		public string GetDisplayTitle()
 		{
 			// view -> profile -> default
-			var title = CurrentView?.Label ?? Profile?.GetDisplayTitleOrDefault();
+			var title = CurrentView?.Label ?? Profile?.GetDisplayTitle();
 			return !title.IsNullOrEmpty() ? title : DEF_TITLE;
 		}
 		public Texture GetDisplayIcon()
 		{
-			var icon = CurrentView?.Icon ?? Profile?.Icon ?? DEFAULT_ICON.Value;
-			return icon.image;
+			return CurrentView?.Icon ?? Profile?.Icon ?? DEFAULT_ICON.Value;
 		}
 
-		private static readonly Lazy<GUIContent> DEFAULT_ICON = new(() =>
+		private static readonly Lazy<Texture> DEFAULT_ICON = new(() =>
 		{
-			var path = AssetDatabase.GUIDToAssetPath(BKConstants.ICO_GUID_WINDOW);
-			return new GUIContent(AssetDatabase.LoadAssetAtPath<Texture>(path));
+			return BKUtils.LoadTexture(BKConstants.ICO_GUID_WINDOW);
 		});
 
 		[SerializeField] private string _filePath = DEF_FILE; // path to bookmarks file relative to project folder
@@ -122,7 +116,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		{
 			// safety check - loading profile might have failed
 			var p = _getFn.Invoke(this);
-			if(p != null && p.IsInvalid)
+			if(p is { IsInvalid: true })
 			{
 				Debug.LogError($"Loading bookmarks file failed: '{p.ProjectPath}'");
 				LoadPath(null);
@@ -163,7 +157,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			// NOTE: this is messy af but at least it isn't in the UI anymore
 			if (Profile == null)
 			{
-				return Enumerable.Empty<BKAsset>();
+				return Array.Empty<BKAsset>();
 			}
 
 			var reader = Profile.GetReader();
@@ -178,15 +172,28 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			var sortBy = sort?.SortBy ?? BKSortBy.Name;
 			var desc = sort?.Descending ?? false;
 
+			// gonna need to clean this bit up
 			if (sortBy == BKSortBy.Name)
 			{
-				if (desc) { r = r.OrderByDescending(x => x.FileName); }
-				else { r = r.OrderBy(x => x.FileName); }
+				if (desc)
+				{
+					r = r.OrderByDescending(x => x.FileName);
+				}
+				else
+				{
+					r = r.OrderBy(x => x.FileName);
+				}
 			}
 			else if (sortBy == BKSortBy.Type)
 			{
-				if (desc) { r = r.OrderByDescending(x => x.MainType.Name); }
-				else { r = r.OrderBy(x => x.MainType.Name); }
+				if (desc)
+				{
+					r = r.OrderByDescending(x => x.MainType.Name);
+				}
+				else
+				{
+					r = r.OrderBy(x => x.MainType.Name);
+				}
 			}
 			return r;
 		}
