@@ -1,0 +1,49 @@
+
+:root {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+}
+
+.sm-bookmarks__window {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+}
+
+.sm-bookmarks__toolbar {
+	display: flex;
+	flex-grow: 0;
+	flex-direction: row;
+}
+
+.sm-bookmarks__footer {
+	display: flex;
+	flex-grow: 0;
+}
+
+.sm-bookmarks__content {
+	flex-grow: 1;
+}
+
+.sm-bookmarks__toolbar-flex {
+	margin: auto;
+}
+
+.sm-bookmarks__footer .unity-text-element {
+	flex-grow: 0;
+	-unity-text-align: middle-left;
+	color:var(--unity-colors-default-text);
+	font-size:10px;
+}
+
+.unity-toolbar-search-field {
+	flex-grow: 1;
+	min-width: 0;
+	flex-shrink: 1;
+}
+
+.bk-toolbar__button {
+}

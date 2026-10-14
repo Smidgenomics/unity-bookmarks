@@ -1,0 +1,13 @@
+
+.bk-toolbar__button {
+	width:29px;
+	min-width:29px;
+}
+
+.bk-toolbar__button .unity-button__image {
+	aspect-ratio:1;
+	width:15px;
+	min-width:15px;
+	height:100%;
+	opacity: 0.5;
+}
