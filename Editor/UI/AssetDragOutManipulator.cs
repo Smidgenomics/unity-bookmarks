@@ -12,10 +12,9 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	/// </summary>
 	internal sealed class AssetDragOutManipulator : PointerManipulator
 	{
-		public AssetDragOutManipulator(VisualElement root, UnityEngine.Object asset)
+		public AssetDragOutManipulator(VisualElement root)
 		{
 			_pointerId = -1;
-			_asset = asset;
 			activators.Add(new ManipulatorActivationFilter { button = MouseButton.LeftMouse });
 			_active = false;
 			_root = root;
@@ -23,7 +22,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private readonly VisualElement _root;
 		public event Action onMouseDown;
-		private readonly UnityEngine.Object _asset;
 		private Vector3 _start;
 		private bool _active;
 		private int _pointerId;
@@ -73,7 +71,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return;
 			}
 
-			if (CanStartManipulation(e))
+			if (target.userData != null && CanStartManipulation(e))
 			{
 				_dragStarted = false;
 				_start = e.localPosition;
@@ -81,7 +79,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				_active = true;
 				target.CapturePointer(_pointerId);
 				onMouseDown?.Invoke();
-				// e.StopPropagation();
 			}
 		}
 
@@ -96,10 +93,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	
 			if (dist > 20)
 			{
+				var asset = target.userData as BKAsset;
 				_active = false;
 				DragAndDrop.PrepareStartDrag();
 				DragAndDrop.StartDrag(string.Empty);
-				DragAndDrop.objectReferences = new [] { _asset };
+				DragAndDrop.objectReferences = new [] { asset?.Asset };
 				DragAndDrop.visualMode = DragAndDropVisualMode.None;
 				_dragStarted = true;
 				

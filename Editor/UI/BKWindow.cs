@@ -9,7 +9,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using UnityEngine.UIElements;
 	using UObject = UnityEngine.Object;
 
-	internal class BKWindow : EditorWindow
+	internal sealed class BKWindow : EditorWindow
 	{
 
 		[MenuItem("Window/Bookmarks", false, -40)]
@@ -81,6 +81,17 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			var tmp = LoadGUID<VisualTreeAsset>(BKConstants.WIN_TEMPLATE_GUID);
 			var win = tmp.Instantiate();
 
+			// win.RegisterCallbackOnce<DragEnterEvent>(ev =>
+			// {
+			// 	
+			// 	Debug.Log("drag enter");
+			// });
+			//
+			// win.RegisterCallbackOnce<DragPerformEvent>(ev =>
+			// {
+			// 	Debug.Log("drag perform");
+			// });
+
 			win.dataSource = _viewData;
 
 			rootVisualElement.Add(win);
@@ -113,26 +124,24 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private void OnBindListItem(VisualElement el, int i)
 		{
-			if (i < 0 || i >= _viewData.items.Count)
+			el.userData = _viewData.items[i].asset;
+
+			// register handlers only once
+			if (!el.ClassListContains("events"))
 			{
-				return;
+				el.AddToClassList("events");
+				el.RegisterCallback<ContextClickEvent>(_ =>
+				{
+					OnItemContext(el.userData as BKAsset);
+				});
+
+				var dragManip = new AssetDragOutManipulator(rootVisualElement);
+				dragManip.onMouseDown += () =>
+				{
+					OnItemClicked(el.userData as BKAsset);
+				};
+				el.AddManipulator(dragManip);
 			}
-			var data = _viewData.items[i];
-			var a = data.asset;
-			
-			el.RegisterCallback<ContextClickEvent>(_ =>
-			{
-				OnItemContext(i);
-			});
-
-			var dragManip = new AssetDragOutManipulator(rootVisualElement, a?.Asset);
-			
-			el.AddManipulator(dragManip);
-
-			dragManip.onMouseDown += () =>
-			{
-				OnItemClicked(i);
-			};
 		}
 
 		private void OnViewChanged()
@@ -146,22 +155,16 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				});
 			}
 			_itemList?.Rebuild();
-			// titleContent.text = _bkUser.GetDisplayTitle();
-			// titleContent.image = _bkUser.GetDisplayIcon();
 			titleContent = new GUIContent(_bkUser.GetDisplayTitle(), _bkUser.GetDisplayIcon());
-			// Repaint();
 		}
 
-		private void OnItemContext(int i)
+		private void OnItemContext(BKAsset a)
 		{
-			if (i < 0 || i >= _viewData.items.Count)
+			if (a == null)
 			{
 				return;
 			}
-			var data = _viewData.items[i];
-			var a = data.asset;
 			var m = new GenericMenu();
-
 			foreach (var (l, fn) in _ASSET_CTX_ACTIONS)
 			{
 				if (l == null)
@@ -174,18 +177,16 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			m.ShowAsContext();
 		}
 
-		private void OnItemClicked(int i)
+		private void OnItemClicked(BKAsset a)
 		{
-			if (i < 0 || i >= _viewData.items.Count)
+			if (a == null)
 			{
 				return;
 			}
-			var data = _viewData.items[i];
-			var a = data.asset;
 			var sz = BKUtils.FormatFileSize(a.FileSize);
 			var txt = $"{a.AssetPath} // {sz}";
 			_viewData.footerText = txt;
-			Selection.activeObject = a?.Asset;
+			Selection.activeObject = a.Asset;
 		}
 
 		private void OnClickRefresh(ClickEvent ev)
