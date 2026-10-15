@@ -20,6 +20,24 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			System.Diagnostics.Process.Start(path);
 		}
 
+		public static bool CanOpenAsset(UnityEngine.Object ob)
+		{
+#if UNITY_6000_3_OR_NEWER
+			return AssetDatabase.CanOpenAssetInEditor(ob.GetEntityId());
+#else
+			return AssetDatabase.CanOpenAssetInEditor(ob.GetInstanceID());
+#endif
+		}
+
+		public static void OpenAsset(UnityEngine.Object ob)
+		{
+#if UNITY_6000_3_OR_NEWER
+			AssetDatabase.OpenAsset(ob.GetEntityId());
+#else
+			AssetDatabase.OpenAsset(ob.GetInstanceID());
+#endif
+		}
+
 		public static Texture LoadTexture(string guidOrName)
 		{
 			if (guidOrName.IsNullOrEmpty())

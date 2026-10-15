@@ -11,6 +11,28 @@
 	height:100%;
 }
 
+.sm-bookmarks__item:hover .sm-bookmarks__item__edit {
+	/*opacity:1;*/
+}
+ 
+.sm-bookmarks__item__edit:hover {
+	background-color:#fff2;
+}
+
+.sm-bookmarks__item__edit:hover {
+	/*opacity:1;*/
+}
+
+.sm-bookmarks__item__edit {
+	/*opacity:0;*/
+	opacity:0;
+	background-color:#0000;
+	margin:0;
+	border-width:0;
+	padding:0;
+	border-radius:4px;
+}
+
 .sm-bookmarks__item__icon {
 	display: flex;
 	width:15px;

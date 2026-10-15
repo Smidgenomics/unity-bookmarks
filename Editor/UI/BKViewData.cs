@@ -14,20 +14,44 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	[GeneratePropertyBag]
 	internal struct BKItemViewData
 	{
-		[CreateProperty] public string label => asset.FileName;
-		[CreateProperty] public Texture icon => asset?.AssetIcon;
-		[CreateProperty] public Rect uv => new Rect(0, 0, 1, 1);
+		[CreateProperty]
+		public string label =>
+		asset.ItemType == EBKItemType.Asset
+		? asset.FileName
+		: $"{asset.FileName}.{asset.FileExtension}";
+
+		[CreateProperty] public Texture icon => asset?.ItemIcon.tex;
+
+		[CreateProperty]
+		public Rect uv
+		{
+			get
+			{
+				if (!icon)
+				{
+					return default;
+				}
+				var icoUV = asset.ItemIcon.uv.Value;
+				// icoUV.y = 1 - icoUV.y; // toolkit uvs are flipped
+				var pos = icoUV.position;
+				pos.y = 1 - (pos.y + icoUV.size.y);
+				icoUV.position = pos;
+				return icoUV;
+			}
+		}
+		
+		
+		[CreateProperty]
+		public Color IconBackgroundColor => icon ? asset.ItemIcon.bg : default;
 
 		[CreateProperty]
 		public Color BGColor => (asset?.IsSelected() ?? false) ? BKConstants.SELECT_COLOR : Color.clear;
 
 		[CreateProperty]
-		public Color iconTint => EditorGUIUtility.isProSkin
-		? Color.white
-		: Color.black;
+		public Color IconTint => icon ? asset.ItemIcon.tint : default;
 
 		[DontCreateProperty] public BKItemViewPrefs prefs;
-		[DontCreateProperty] public BKAsset asset;
+		[DontCreateProperty] public BKItem asset;
 	}
 }
 
@@ -65,7 +89,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				{
 					return new Rect(0.5f, 0.75f, 0.25f, 0.25f);
 				}
-				return string.IsNullOrEmpty(user.View)
+				return string.IsNullOrEmpty(user.FilterKey)
 				? new Rect(0.5f, 0.75f, 0.25f, 0.25f)
 				: new Rect(0.75f, 0.75f, 0.25f, 0.25f);
 			}

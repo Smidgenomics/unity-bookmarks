@@ -71,13 +71,16 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return;
 			}
 
-			if (target.userData != null && CanStartManipulation(e))
+			if (CanStartManipulation(e))
 			{
-				_dragStarted = false;
-				_start = e.localPosition;
-				_pointerId = e.pointerId;
-				_active = true;
-				target.CapturePointer(_pointerId);
+				if(target.userData != null && target.userData is BKItem item && item.IsDraggable())
+				{
+					_dragStarted = false;
+					_start = e.localPosition;
+					_pointerId = e.pointerId;
+					_active = true;
+					target.CapturePointer(_pointerId);
+				}
 				onMouseDown?.Invoke();
 			}
 		}
@@ -93,7 +96,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	
 			if (dist > 20)
 			{
-				var asset = target.userData as BKAsset;
+				var asset = target.userData as BKItem;
 				_active = false;
 				DragAndDrop.PrepareStartDrag();
 				DragAndDrop.StartDrag(string.Empty);

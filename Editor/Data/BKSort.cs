@@ -5,85 +5,79 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using System;
 	using Newtonsoft.Json;
 
-	internal enum BKSortBy { Name, Type }
-
 	/// <summary>
-	/// Serialization helper - validate default sort mode
+	/// Item sorter
 	/// </summary>
 	[Serializable]
 	[JsonObject(MemberSerialization.OptIn)]
 	internal sealed class BKSort
 	{
-		public static readonly BKSort Default = new BKSort();
-		public delegate int CompareFunction(BKAsset a, BKAsset b);
+		public static readonly BKSort Default = new (EBKSortBy.Name, false);
+		public EBKSortBy SortBy { get; }
+		public bool Descending { get; }
 
-		public CompareFunction CompareFn => GetSortFn(); // todo: cache this
-		public BKSortBy SortBy { get; private set; } = DEFAULT_SORT;
-		public bool Descending { get; private set; } = false;
+		public int Compare(BKItem a, BKItem b)
+		{
+			return _compareFn.Invoke(a, b);
+		}
 
-		private const BKSortBy DEFAULT_SORT = BKSortBy.Name;
+		public IComparable OrderBy(BKItem a)
+		{
+			return _orderFn.Invoke(a);
+		}
 
-		private BKSort() { }
+		private readonly Func<BKItem,BKItem,int> _compareFn;
+		private readonly Func<BKItem,IComparable> _orderFn;
+
+		private BKSort(EBKSortBy sort, bool desc)
+		{
+			SortBy = sort;
+			Descending = desc;
+			_compareFn = sort == EBKSortBy.Name ? CompareName : CompareType;
+			_orderFn = sort == EBKSortBy.Name ? OrderByName : OrderByType;
+		}
+
+		private IComparable OrderByName(BKItem a) => a.FileName;
+		private IComparable OrderByType(BKItem a) => a.MainType.Name;
 
 		public static implicit operator string(BKSort s)
 		{
-			var m = s.Descending ? "-" : "";
-			return $"{m}{s.SortBy.ToString().ToLower()}";
+			var m = s.Descending ? '-' : '\0';
+			var n = s.SortBy == EBKSortBy.Type ? 't' : 'n';
+			return $"{m}{n}";
 		}
 
-		public static implicit operator BKSort(string s) => new BKSort(s);
-
-		public BKSort(string sort)
+		public static implicit operator BKSort(string s)
 		{
-			var (type, desc) = ParseSort(sort);
-			SortBy = type;
-			Descending = desc;
+			if(string.IsNullOrEmpty(s))
+			{
+				return null;
+			}
+			var (type, desc) = ParseSort(s);
+			return new BKSort(type, desc);
 		}
 
-		private const string S_NAME = "name";
-		private const string S_TYPE = "type";
-
-		private static (BKSortBy,bool) ParseSort(string sort)
+		private static (EBKSortBy,bool) ParseSort(string sort)
 		{
-			if(sort.Length < 2) { return (DEFAULT_SORT, false); }
+			if (sort.Length < 1)
+			{
+				return default;
+			}
 			var desc = sort[0] == '-';
-			var type = DEFAULT_SORT;
-			var sortKey = sort.AsSpan(desc ? 1 : 0);
-			if (Compare(sortKey, S_NAME)) { type = BKSortBy.Name; }
-			else if (Compare(sortKey, S_TYPE)) { type = BKSortBy.Type; }
+			var type = sort[desc ? 1 : 0] == 't' ? EBKSortBy.Type : EBKSortBy.Name;
 			return (type, desc);
 		}
 
-		private static bool Compare(in ReadOnlySpan<char> s, string other)
-		{
-			// TODO: compare span better
-			if(s.Length != other.Length) { return false; }
-			var i = 0;
-			foreach(var c in s)
-			{
-				if(c != other[i]) { return false; }
-				i++;
-			}
-			return true;
-		}
-
-		private CompareFunction GetSortFn()
-		{
-			if(SortBy == BKSortBy.Name) { return SortByName; }
-			if(SortBy == BKSortBy.Type) { return SortByType; }
-			return SortByName;
-		}
-
-		private int SortByName(BKAsset a, BKAsset b)
+		private int CompareName(BKItem a, BKItem b)
 		{
 			SwapIf(ref a, ref b, Descending);
 			return a.FileName.CompareTo(b);
 		}
 
-		private int SortByType(BKAsset a, BKAsset b)
+		private int CompareType(BKItem a, BKItem b)
 		{
 			SwapIf(ref a, ref b, Descending);
-			return a.MainType.Name.CompareTo(b.MainType.Name);
+			return String.Compare(a.MainType.Name, b.MainType.Name, StringComparison.Ordinal);
 		}
 
 		private static void SwapIf<T>(ref T a, ref T b, bool condition)

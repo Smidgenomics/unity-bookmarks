@@ -2,19 +2,6 @@
 
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
-	using System.Collections.Generic;
-
-	/// <summary>
-	/// Asset list provider
-	/// </summary>
-	internal interface IBKReader
-	{
-		public IEnumerable<BKAsset> Read();
-	}
-}
-
-namespace Smidgenomics.Unity.Bookmarks.Editor
-{
 	using Newtonsoft.Json;
 	using System;
 	using System.Collections.Generic;
@@ -35,9 +22,20 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public static IBKReader GetDefaultReader() => EmptyReader.Instance;
 
+		public bool TryGetIcon(string key, out LoadedIcon icon)
+		{
+			if (_fileIcons.TryGetValue(key, out var ico))
+			{
+				icon = ico.GetIcon();
+				return true;
+			}
+			icon = default;
+			return false;
+		}
+
 		public void AddGUID(string guid)
 		{
-			if (Include.AddGUID(guid))
+			if (Include.AddRef(guid))
 			{
 				Save();
 			}
@@ -45,7 +43,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public void AddGUIDs(IEnumerable<string> guids)
 		{
-			if (Include.AddGUIDs(guids))
+			if (Include.AddRefs(guids))
 			{
 				Save();
 			}
@@ -53,7 +51,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public void RemoveGUID(string guid)
 		{
-			if (Include.RemoveGUID(guid))
+			if (Include.RemoveRef(guid))
 			{
 				Save();
 			}
@@ -61,8 +59,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public BKProfile()
 		{
-			_icon = new(() => BKUtils.LoadTexture(_iconGUID));
-			_sort = new(() => _sortKey);
+			_icon = new CachedLoad<Texture>(LoadProfileIcon);
 		}
 
 		public static BKProfile LoadFromPath(string path)
@@ -93,6 +90,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			return options;
 		}
 
+		private Texture LoadProfileIcon() => BKUtils.LoadTexture(_iconGUID);
+
 		private static string ProfileLabelFromPath(string path)
 		{
 			return path.Replace("Settings", string.Empty) 
@@ -121,11 +120,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				jtw.Indentation = 1;
 				jtw.IndentChar = '\t';
 				(new JsonSerializer()).Serialize(jtw, this);
-				// var json = JsonConvert.SerializeObject(this, new JsonSerializerSettings
-				// {
-				// 	Formatting = Formatting.Indented, // cba adding tabs
-				// });
-				// File.WriteAllText(ProjectPath, json);
 			}
 			catch(Exception e)
 			{
@@ -148,27 +142,29 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		// Absolute path to file
 		public string FilePath { get; private set; }
-
-		[JsonProperty("defaultSort")] private string _sortKey = "name";
-
-		//[JsonProperty("defaultSort")]
-		public BKSort DefaultSort => _sort.Value;
+		
+		public BKSort DefaultSort => _defaultSort ?? BKSort.Default;
 
 		// Display text, used for window tab if set
 		[JsonProperty("title")] public string Title { get; private set; }
 
+		[JsonProperty("defaultSort")] private BKSort _defaultSort;
+
+		[JsonProperty("fileIcons", NullValueHandling = NullValueHandling.Ignore)]
+		private Dictionary<string, BKIconSettings> _fileIcons = new();
+
 		// Filtered views
-		[JsonProperty("views")] public BKView[] Views { get; private set; } = Array.Empty<BKView>();
-		
+		[JsonProperty("filters")] public BKViewFilter[] Filters { get; private set; } = Array.Empty<BKViewFilter>();
+
 		// Assets to include
 		[JsonProperty("include")] public BKInclude Include { get; private set; } = new ();
 
 		// GUID of display icon for view
 		[JsonProperty("icon")] private string _iconGUID;
 
-		public Texture Icon => _icon?.Value;
-		private Lazy<Texture> _icon;
-		private Lazy<BKSort> _sort;
+		public Texture ProfileIcon => _icon.Value;
+		private CachedLoad<Texture> _icon;
+		private FileChangeHandle _changeHandle;
 
 		public IBKReader GetReader()
 		{
@@ -189,7 +185,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		{
 			var lastEdit = GetLastFileEdit();
 			// nothing to reload
-			if (lastEdit == _lastWrite) { return; }
+			if (lastEdit == _lastWrite)
+			{
+				return;
+			}
 			_lastWrite = lastEdit;
 			try
 			{
@@ -202,9 +201,14 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 		}
 
-		private IEnumerable<BKAsset> GetAllAssets()
+		private IEnumerable<BKItem> GetAllAssets()
 		{
-			return Include.FindAssets();
+			var r = Include.FindAssets();
+			foreach (var item in r)
+			{
+				item.Profile = this;
+			}
+			return r;
 		}
 
 		private long GetLastFileEdit()
@@ -215,20 +219,21 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private sealed class EmptyReader : IBKReader
 		{
 			public static readonly EmptyReader Instance = new ();
-
 			private EmptyReader(){}
-			public IEnumerable<BKAsset> Read() => Array.Empty<BKAsset>();
+			public IEnumerable<BKItem> Read() => Array.Empty<BKItem>();
 		}
 
 		private sealed class ReadHandle : IBKReader
 		{
 			public Action reloadFn;
 			public Func<long> dateFn;
-			public Func<IEnumerable<BKAsset>> getFn;
-			private long _lastDate;
-			private IEnumerable<BKAsset> _cachedAssets = Array.Empty<BKAsset>();
+			public Func<IEnumerable<BKItem>> getFn;
 
-			public IEnumerable<BKAsset> Read()
+			private FileChangeHandle _changeHandle;
+			private long _lastDate;
+			private IEnumerable<BKItem> _cachedAssets = Array.Empty<BKItem>();
+
+			public IEnumerable<BKItem> Read()
 			{
 				var latestDate = dateFn.Invoke();
 				if(latestDate != _lastDate)

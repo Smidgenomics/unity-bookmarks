@@ -16,7 +16,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public static void Open() => CreateWindow<BKWindow>(_DOCK_TYPES).Show();
 
 		// context menu handler
-		private delegate void AssetContextFn(BKUser u, BKAsset a);
+		private delegate void AssetContextFn(BKUser u, BKItem a);
+		private delegate bool AssetContextGuard(BKUser u, BKItem a);
 
 		private static readonly GUIContent _LB_EDIT = new ("Edit...");
 		private static readonly GUIContent _LB_ALL = new ("All");
@@ -35,25 +36,34 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			Type.GetType("UnityEditor.ProjectBrowser, UnityEditor.CoreModule")
 		};
 
+		private static bool IsAsset(BKUser u, BKItem a) => a.ItemType == EBKItemType.Asset;
+		private static bool IsExternal(BKUser u, BKItem a) => a.ItemType == EBKItemType.External;
+		private static bool CanOpenItem(BKUser u, BKItem a) => a.CanOpenFile();
+
 		// declared here for convenience
-		private static readonly (GUIContent, AssetContextFn)[] _ASSET_CTX_ACTIONS =
+		private static readonly (GUIContent, AssetContextGuard, AssetContextFn)[] _ASSET_CTX_ACTIONS =
 		{
-			(new GUIContent("Copy GUID"), (_,a) =>
+			(new GUIContent("Copy GUID"), IsAsset, (_,a) =>
 			{
 				GUIUtility.systemCopyBuffer = a.GUID;
 			}),
-			(new GUIContent("Copy Path"), (_,a) =>
+			(new GUIContent("Copy Path"), IsAsset, (_,a) =>
 			{
-				GUIUtility.systemCopyBuffer = a.AssetPath;
+				GUIUtility.systemCopyBuffer = a.FilePath;
 			}),
-			(new GUIContent("Copy Type"), (_,a) =>
+			(new GUIContent("Copy Type"), IsAsset, (_,a) =>
 			{
 				GUIUtility.systemCopyBuffer = a.MainType.Name;
 			}),
-			default,
-			(new GUIContent("Exclude"), (u,a) =>
+			(null, IsAsset, null),
+			(new GUIContent("Exclude"), null, (u,a) =>
 			{
 				u.RemoveGUID(a.GUID);
+			}),
+			(null, CanOpenItem, null),
+			(new GUIContent("Open..."), CanOpenItem, (u,a) =>
+			{
+				a.Open();
 			}),
 		};
 
@@ -132,13 +142,13 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				el.AddToClassList("events");
 				el.RegisterCallback<ContextClickEvent>(_ =>
 				{
-					OnItemContext(el.userData as BKAsset);
+					OnItemContext(el.userData as BKItem);
 				});
 
 				var dragManip = new AssetDragOutManipulator(rootVisualElement);
 				dragManip.onMouseDown += () =>
 				{
-					OnItemClicked(el.userData as BKAsset);
+					OnItemClicked(el.userData as BKItem);
 				};
 				el.AddManipulator(dragManip);
 			}
@@ -158,15 +168,19 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			titleContent = new GUIContent(_bkUser.GetDisplayTitle(), _bkUser.GetDisplayIcon());
 		}
 
-		private void OnItemContext(BKAsset a)
+		private void OnItemContext(BKItem a)
 		{
 			if (a == null)
 			{
 				return;
 			}
 			var m = new GenericMenu();
-			foreach (var (l, fn) in _ASSET_CTX_ACTIONS)
+			foreach (var (l, guardFn, fn) in _ASSET_CTX_ACTIONS)
 			{
+				if (guardFn != null && !guardFn.Invoke(_bkUser, a))
+				{
+					continue;
+				}
 				if (l == null)
 				{
 					m.AddSeparator(string.Empty);
@@ -177,16 +191,16 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			m.ShowAsContext();
 		}
 
-		private void OnItemClicked(BKAsset a)
+		private void OnItemClicked(BKItem a)
 		{
 			if (a == null)
 			{
 				return;
 			}
 			var sz = BKUtils.FormatFileSize(a.FileSize);
-			var txt = $"{a.AssetPath} // {sz}";
+			var txt = $"{a.FilePath} // {sz}";
 			_viewData.footerText = txt;
-			Selection.activeObject = a.Asset;
+			a.Select();
 		}
 
 		private void OnClickRefresh(ClickEvent ev)
@@ -231,20 +245,20 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		{
 			var m = new GenericMenu();
 
-			m.AddItem(_LB_ALL, string.IsNullOrEmpty(_bkUser.View), () =>
+			m.AddItem(_LB_ALL, string.IsNullOrEmpty(_bkUser.FilterKey), () =>
 			{
-				_bkUser.View = null;
+				_bkUser.FilterKey = null;
 			});
 
 			m.AddSeparator(string.Empty);
 
-			foreach (var v in _bkUser.Views)
+			foreach (var v in _bkUser.Filters)
 			{
 				var cv = v;
-				var active = v == _bkUser.CurrentView;
-				m.AddItem(new GUIContent(v.Label), active, () =>
+				var active = v == _bkUser.CurrentFilter;
+				m.AddItem(new GUIContent(v.Title), active, () =>
 				{
-					_bkUser.View = cv.Key;
+					_bkUser.FilterKey = cv.ViewKey;
 				});
 			}
 			m.ShowAsContext();

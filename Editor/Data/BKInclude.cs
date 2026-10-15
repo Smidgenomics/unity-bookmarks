@@ -10,46 +10,46 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	[JsonObject(MemberSerialization.OptIn)]
 	internal sealed class BKInclude
 	{
-		public bool AddGUID(string guid)
+		public bool AddRef(string guidOrPath)
 		{
-			if (guid.IsNullOrEmpty())
+			if (guidOrPath.IsNullOrEmpty())
 			{
 				return false;
 			}
-			return _guids.Add(guid);
+			return _refs.Add(guidOrPath);
 		}
 
-		public bool AddGUIDs(IEnumerable<string> guids)
+		public bool AddRefs(IEnumerable<string> guidsOrPaths)
 		{
 			var changed = false;
-			foreach(var g in guids)
+			foreach(var g in guidsOrPaths)
 			{
-				changed |= AddGUID(g);
+				changed |= AddRef(g);
 			}
 			return changed;
 		}
-		public bool RemoveGUID(string guid)
+		public bool RemoveRef(string guidOrPath)
 		{
-			return _guids.Remove(guid);
+			return _refs.Remove(guidOrPath);
 		}
 
 		//  Find all asset guids
-		public HashSet<BKAsset> FindAssets()
+		public HashSet<BKItem> FindAssets()
 		{
-			HashSet<BKAsset> assets = new();
+			HashSet<BKItem> assets = new();
 
-			foreach(var guid in _guids)
+			foreach(var guid in _refs)
 			{
-				BKAsset a = guid;
+				BKItem a = guid;
 				if (a == null)
 				{
 					continue;
 				}
 				assets.Add(a);
 			}
-			foreach(var q in _find)
+			foreach(var q in _queries)
 			{
-				foreach(var guid in q.GetGUIDs())
+				foreach(var guid in q.GetIncludes())
 				{
 					assets.Add(guid);
 				}
@@ -58,9 +58,9 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		}
 
 		// explicit asset GUIDs to include in list
-		[JsonProperty("guids")] private HashSet<string> _guids = new();
+		[JsonProperty("refs")] private HashSet<string> _refs = new();
 
-		// find queries
-		[JsonProperty("find")] private BKQuery[] _find = Array.Empty<BKQuery>();
+		// asset find queries
+		[JsonProperty("queries")] private BKQuery[] _queries = Array.Empty<BKQuery>();
 	}
 }

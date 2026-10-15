@@ -44,20 +44,19 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private BKProfile Profile => GetProfile();
 
-		// TODO: cache this
-		public IEnumerable<BKAsset> Assets => GetAssets();
+		public IEnumerable<BKItem> Assets => GetAssets();
 
-		public BKView CurrentView => GetCurrentView();
+		public BKViewFilter CurrentFilter => GetCurrentFilter();
 
-		public IEnumerable<BKView> Views => ViewCount > 0 ? Profile.Views : Array.Empty<BKView>();
+		public IEnumerable<BKViewFilter> Filters => ViewCount > 0 ? Profile.Filters : Array.Empty<BKViewFilter>();
 
-		public string View
+		public string FilterKey
 		{
 			get => _viewKey;
-			set => SetView(value);
+			set => SetFilter(value);
 		}
 
-		public int ViewCount => Profile?.Views?.Length ?? 0;
+		public int ViewCount => Profile?.Filters?.Length ?? 0;
 
 		public void Load(string path)
 		{
@@ -89,12 +88,12 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public string GetDisplayTitle()
 		{
 			// view -> profile -> default
-			var title = CurrentView?.Label ?? Profile?.GetDisplayTitle();
+			var title = CurrentFilter?.Title ?? Profile?.GetDisplayTitle();
 			return !title.IsNullOrEmpty() ? title : DEF_TITLE;
 		}
 		public Texture GetDisplayIcon()
 		{
-			return CurrentView?.Icon ?? Profile?.Icon ?? DEFAULT_ICON.Value;
+			return CurrentFilter?.Icon ?? Profile?.ProfileIcon ?? DEFAULT_ICON.Value;
 		}
 
 		private static readonly Lazy<Texture> DEFAULT_ICON = new(() =>
@@ -110,13 +109,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private void UpdateFilter(string filterStr)
 		{
 			_filterString = filterStr.ToLower();
-
 			_filterParts = _filterString.Split(' ');
 			for (var i = 0; i < _filterParts.Length; i++)
 			{
 				_filterParts[i] = _filterParts[i].Trim();
 			}
-			
 			viewChanged?.Invoke();
 
 		}
@@ -137,7 +134,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private BKProfile _profile; // currently loaded profile
 		private Func<BKUser, BKProfile> _getFn = InitBK;
 
-		private bool Filter(BKView view, BKAsset a)
+		private bool Filter(BKViewFilter view, BKItem a)
 		{
 			if (view != null && !view.Contains(a))
 			{
@@ -146,7 +143,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 			if (_filterParts.Length > 0)
 			{
-				var name = a.Asset.name.ToLower();
+				var name = a.FileName;
 
 				foreach (var p in _filterParts)
 				{
@@ -157,63 +154,38 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				}
 				return false;
 			}
-			
 			return true;
 		}
 
-		private IEnumerable<BKAsset> GetAssets()
+		private IEnumerable<BKItem> GetAssets()
 		{
-			// NOTE: this is messy af but at least it isn't in the UI anymore
 			if (Profile == null)
 			{
-				return Array.Empty<BKAsset>();
+				return Array.Empty<BKItem>();
 			}
 
 			var reader = Profile.GetReader();
-			var defaultSort = Profile.DefaultSort;
-			var currentView = GetCurrentView();
+			var currentView = GetCurrentFilter();
 
 			var r = reader.Read()
 			.Where(a => a && Filter(currentView, a));
 
-			var sort = currentView?.Sort ?? defaultSort;
+			var sort = currentView?.Sort ?? Profile.DefaultSort;
 
-			var sortBy = sort?.SortBy ?? BKSortBy.Name;
-			var desc = sort?.Descending ?? false;
+			r = sort.Descending
+			? r.OrderByDescending(x => sort.OrderBy(x))
+			: r.OrderBy(x => sort.OrderBy(x));
 
-			// gonna need to clean this bit up
-			if (sortBy == BKSortBy.Name)
-			{
-				if (desc)
-				{
-					r = r.OrderByDescending(x => x.FileName);
-				}
-				else
-				{
-					r = r.OrderBy(x => x.FileName);
-				}
-			}
-			else if (sortBy == BKSortBy.Type)
-			{
-				if (desc)
-				{
-					r = r.OrderByDescending(x => x.MainType.Name);
-				}
-				else
-				{
-					r = r.OrderBy(x => x.MainType.Name);
-				}
-			}
 			return r;
 		}
 
-		private BKView GetCurrentView()
+		private BKViewFilter GetCurrentFilter()
 		{
 			var i = IndexOfView(_viewKey);
-			return i == -1 ? null : GetView(i);
+			return i == -1 ? null : GetFilterAtIndex(i);
 		}
 
-		private void SetView(string key)
+		private void SetFilter(string key)
 		{
 			_viewKey = null;
 			if(IndexOfView(key) > -1)
@@ -223,14 +195,14 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			viewChanged?.Invoke();
 		}
 
-		private BKView GetView(int i) => Profile.Views[i];
+		private BKViewFilter GetFilterAtIndex(int i) => Profile.Filters[i];
 
 		private int IndexOfView(string key)
 		{
 			for(var i = 0; i < ViewCount; i++)
 			{
-				var v = GetView(i);
-				if(v.Key == key) return i;
+				var v = GetFilterAtIndex(i);
+				if(v.ViewKey == key) return i;
 			}
 			return -1;
 		}

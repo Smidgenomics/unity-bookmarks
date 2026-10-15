@@ -1,0 +1,76 @@
+{
+	"title":"Data",
+	"defaultSort": "t",
+	"fileIcons":{
+		"toml":{
+			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
+			"uv":"56/8"
+		},
+		"psd":{
+			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
+			"uv":"1/8"
+		},
+		"blend":{
+			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
+			"uv":"0/8"
+		},
+		"md":{
+			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
+			"uv":"3/8"
+		},
+		"json":{
+			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
+			"uv":"2/8"
+		}
+	},
+	"include":{
+		"refs":[
+			"Data/main.toml"
+		],
+		"queries":[
+			{
+				"filter":"*.toml",
+				"folders":[
+					"Data/units"
+				]
+			},
+			{
+				"filter":"*.json",
+				"folders":[
+					"Data/manifestos"
+				]
+			}
+		]
+	},
+	"filters":[
+		{
+			"key": "mein_strudel",
+			"title": "Manifestos",
+			"sort": "n",
+			"op":"&",
+			"rules":[
+				"p:Data/manifestos*"
+			]
+		},
+		{
+			"key": "all_except_units",
+			"title": "All Except Units",
+			"sort": "n",
+			"op":"&",
+			"rules":[
+				"p:*.toml",
+				"!p:Data/units*"
+			]
+		},
+		{
+			"key": "units",
+			"title": "Units",
+			"sort": "n",
+			"op":"&",
+			"rules":[
+				"p:*.toml",
+				"p:Data/units*"
+			]
+		}
+	]
+}
