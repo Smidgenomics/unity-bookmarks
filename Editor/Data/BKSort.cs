@@ -27,15 +27,15 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			var (fn, desc) = _orderFns[0];
 			
 			var sorted = desc
-				? items.OrderByDescending(x => fn.Invoke(x))
-				: items.OrderBy(x => fn.Invoke(x));
+			? items.OrderByDescending(x => fn.Invoke(x))
+			: items.OrderBy(x => fn.Invoke(x));
 
 			for (var i = 1; i < _orderFns.Count; i++)
 			{
 				var (nextFn, nextDesc) = _orderFns[i];
 				sorted = nextDesc
-					? sorted.ThenByDescending(x => nextFn.Invoke(x))
-					: sorted.ThenBy(x => nextFn.Invoke(x));
+				? sorted.ThenByDescending(x => nextFn.Invoke(x))
+				: sorted.ThenBy(x => nextFn.Invoke(x));
 			}
 			return sorted;
 		}
