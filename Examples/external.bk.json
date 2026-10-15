@@ -1,6 +1,6 @@
 {
 	"title":"Data",
-	"defaultSort": "t",
+	"sort": "e,n",
 	"fileIcons":{
 		"toml":{
 			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
@@ -21,11 +21,15 @@
 		"json":{
 			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
 			"uv":"2/8"
+		},
+		"asset":{
+			"tex":"UnityLogo"
 		}
 	},
 	"include":{
 		"refs":[
-			"Data/main.toml"
+			"Data/main.toml",
+			"ProjectSettings/AudioManager.asset"
 		],
 		"queries":[
 			{

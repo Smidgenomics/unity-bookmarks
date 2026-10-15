@@ -12,7 +12,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	/// Bookmarks file
 	/// </summary>
 	[Serializable]
-	[JsonObject(MemberSerialization.OptIn)]
+	[JsonObject(MemberSerialization.OptIn, ItemNullValueHandling = NullValueHandling.Ignore)]
 	internal sealed class BKProfile
 	{
 		public const string FILE_EXT = "bk.json";
@@ -20,7 +20,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public bool IsInvalid => _deleted;
 
-		public static IBKReader GetDefaultReader() => EmptyReader.Instance;
+		public bool IsStale()
+		{
+			return GetLastFileEdit() != _lastEdited;
+		}
 
 		public bool TryGetIcon(string key, out LoadedIcon icon)
 		{
@@ -33,28 +36,35 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			return false;
 		}
 
-		public void AddGUID(string guid)
+		public bool AddRef(string guid)
 		{
 			if (Include.AddRef(guid))
 			{
 				Save();
+				return true;
 			}
+			return false;
 		}
 
-		public void AddGUIDs(IEnumerable<string> guids)
+		public bool AddRefs(IEnumerable<string> guids)
 		{
 			if (Include.AddRefs(guids))
 			{
 				Save();
+				return true;
 			}
+
+			return false;
 		}
 
-		public void RemoveGUID(string guid)
+		public bool RemoveRef(string guid)
 		{
-			if (Include.RemoveRef(guid))
+			var r = Include.RemoveRef(guid);
+			if (r)
 			{
 				Save();
 			}
+			return r;
 		}
 
 		public BKProfile()
@@ -69,10 +79,28 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return null;
 			}
 			var json = File.ReadAllText(path);
-			var settings = JsonConvert.DeserializeObject<BKProfile>(json);
-			settings.FilePath = $"{BKConstants.PROJECT_ROOT}/{path}";
-			settings.ProjectPath = path;
-			return settings;
+			var profile = JsonConvert.DeserializeObject<BKProfile>(json, GetSerializerSettings());
+			profile.FilePath = $"{BKConstants.PROJECT_ROOT}/{path}";
+			profile._lastEdited = BKUtils.GetLastFileEditTime(profile.FilePath);
+			profile.ProjectPath = path;
+			return profile;
+		}
+
+		private static JsonSerializerSettings _cachedSerializationSettings;
+
+		private static JsonSerializerSettings GetSerializerSettings()
+		{
+			_cachedSerializationSettings ??= new JsonSerializerSettings
+			{
+				Converters = new List<JsonConverter>()
+				{
+					// new JsonToStringConverter(typeof(BKSort))
+				}
+				// TypeNameHandling = TypeNameHandling.All,
+				// MissingMemberHandling = MissingMemberHandling.Ignore,
+				// NullValueHandling = NullValueHandling.Ignore
+			};
+			return _cachedSerializationSettings;
 		}
 
 		public static IReadOnlyList<(string, string)> GetProfileOptions()
@@ -119,7 +147,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				jtw.Formatting = Formatting.Indented;
 				jtw.Indentation = 1;
 				jtw.IndentChar = '\t';
-				(new JsonSerializer()).Serialize(jtw, this);
+				var serializer = new JsonSerializer
+				{
+					NullValueHandling = NullValueHandling.Ignore
+				};
+				serializer.Serialize(jtw, this);
 			}
 			catch(Exception e)
 			{
@@ -145,51 +177,61 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		
 		public BKSort DefaultSort => _defaultSort ?? BKSort.Default;
 
+		public string Title => _title;
+
 		// Display text, used for window tab if set
-		[JsonProperty("title")] public string Title { get; private set; }
-
-		[JsonProperty("defaultSort")] private BKSort _defaultSort;
-
-		[JsonProperty("fileIcons", NullValueHandling = NullValueHandling.Ignore)]
-		private Dictionary<string, BKIconSettings> _fileIcons = new();
-
-		// Filtered views
-		[JsonProperty("filters")] public BKViewFilter[] Filters { get; private set; } = Array.Empty<BKViewFilter>();
-
-		// Assets to include
-		[JsonProperty("include")] public BKInclude Include { get; private set; } = new ();
+		// [JsonProperty("title", Order = -1)] public string Title { get; private set; }
+		[JsonProperty("title")] private string _title;
 
 		// GUID of display icon for view
 		[JsonProperty("icon")] private string _iconGUID;
+
+		[JsonProperty("sort")] private BKSort _defaultSort;
+
+		[JsonProperty("fileIcons")]
+		private Dictionary<string, BKIconSettings> _fileIcons = new();
+
+		public BKViewFilter[] Filters => _filters;
+
+		public BKInclude Include => _include;
+		
+		// Assets to include
+		[JsonProperty("include")] private BKInclude _include = new ();
+
+		// Filtered views
+		[JsonProperty("filters")] private BKViewFilter[] _filters = Array.Empty<BKViewFilter>();
+
+		
+
 
 		public Texture ProfileIcon => _icon.Value;
 		private CachedLoad<Texture> _icon;
 		private FileChangeHandle _changeHandle;
 
-		public IBKReader GetReader()
+		public IBKItemProvider GetItemProvider()
 		{
-			_reader ??= new ReadHandle
+			_itemProvider ??= new ItemProvider
 			{
 				getFn = GetAllAssets,
 				dateFn = GetLastFileEdit,
-				reloadFn = Reload
+				reloadFn = ReloadProfile
 			};
-			return _reader;
+			return _itemProvider;
 		}
 
-		private ReadHandle _reader;
-		private long _lastWrite;
+		private ItemProvider _itemProvider;
+		private long _lastEdited;
 		private bool _deleted;
 
-		private void Reload()
+		private void ReloadProfile()
 		{
 			var lastEdit = GetLastFileEdit();
 			// nothing to reload
-			if (lastEdit == _lastWrite)
+			if (lastEdit == _lastEdited)
 			{
 				return;
 			}
-			_lastWrite = lastEdit;
+			_lastEdited = lastEdit;
 			try
 			{
 				var json = File.ReadAllText(FilePath);
@@ -216,14 +258,14 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			return File.GetLastWriteTime(FilePath).ToFileTime();
 		}
 
-		private sealed class EmptyReader : IBKReader
+		private sealed class DefaultItemProvider : IBKItemProvider
 		{
-			public static readonly EmptyReader Instance = new ();
-			private EmptyReader(){}
-			public IEnumerable<BKItem> Read() => Array.Empty<BKItem>();
+			public static readonly DefaultItemProvider Instance = new ();
+			private DefaultItemProvider(){}
+			public IEnumerable<BKItem> GetItems() => Array.Empty<BKItem>();
 		}
 
-		private sealed class ReadHandle : IBKReader
+		private sealed class ItemProvider : IBKItemProvider
 		{
 			public Action reloadFn;
 			public Func<long> dateFn;
@@ -233,7 +275,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			private long _lastDate;
 			private IEnumerable<BKItem> _cachedAssets = Array.Empty<BKItem>();
 
-			public IEnumerable<BKItem> Read()
+			public IEnumerable<BKItem> GetItems()
 			{
 				var latestDate = dateFn.Invoke();
 				if(latestDate != _lastDate)

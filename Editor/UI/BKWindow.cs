@@ -58,7 +58,14 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			(null, IsAsset, null),
 			(new GUIContent("Exclude"), null, (u,a) =>
 			{
-				u.RemoveGUID(a.GUID);
+				if (a.ItemType == EBKItemType.Asset)
+				{
+					u.RemoveRef(a.GUID);
+				}
+				else
+				{
+					u.RemoveRef(a.FilePath);
+				}
 			}),
 			(null, CanOpenItem, null),
 			(new GUIContent("Open..."), CanOpenItem, (u,a) =>
@@ -150,6 +157,17 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				{
 					OnItemClicked(el.userData as BKItem);
 				};
+
+				var dblClickManip = new DoubleClickManipulator();
+				dblClickManip.onClick += e =>
+				{
+					if (el.userData is BKItem item && item.CanOpenFile())
+					{
+						item.Open();
+					}
+				};
+
+				el.AddManipulator(dblClickManip);
 				el.AddManipulator(dragManip);
 			}
 		}
@@ -217,7 +235,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 			if (_bkUser.HasProfile)
 			{
-				m.AddItem(_LB_EDIT, false, _bkUser.Edit);
+				m.AddItem(_LB_EDIT, false, _bkUser.EditCurrentProfile);
 				m.AddSeparator(string.Empty);
 			}
 

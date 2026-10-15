@@ -10,6 +10,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	// misc helper functions
 	internal static class BKUtils
 	{
+		public static long GetLastFileEditTime(string filePath)
+		{
+			return File.GetLastWriteTime(filePath).ToFileTime();
+		}
+		
 		public static void OpenProjectFile(string relativePath)
 		{
 			var path = Path.Combine(BKConstants.PROJECT_ROOT, relativePath).Replace(@"\", "/");
@@ -18,6 +23,21 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return;
 			}
 			System.Diagnostics.Process.Start(path);
+		}
+
+		public static long GetFileSize(string path)
+		{
+			try
+			{
+				return File.Exists(path)
+				? new FileInfo(path).Length
+				: 0;
+			}
+			catch
+			{
+				// ignored
+			}
+			return 0;
 		}
 
 		public static bool CanOpenAsset(UnityEngine.Object ob)

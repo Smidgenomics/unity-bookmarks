@@ -3,6 +3,8 @@
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
 	using System;
+	using System.Collections.Generic;
+	using System.Linq;
 	using Newtonsoft.Json;
 
 	/// <summary>
@@ -10,42 +12,84 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	/// </summary>
 	[Serializable]
 	[JsonObject(MemberSerialization.OptIn)]
+	[JsonConverter(typeof(JsonToStringConverter))]
 	internal sealed class BKSort
 	{
-		public static readonly BKSort Default = new (EBKSortBy.Name, false);
-		public EBKSortBy SortBy { get; }
-		public bool Descending { get; }
+		public static readonly BKSort Default = new ("n");
 
-		public int Compare(BKItem a, BKItem b)
+		public IEnumerable<BKItem> OrderItems(IEnumerable<BKItem> items)
 		{
-			return _compareFn.Invoke(a, b);
+			if (_orderFns.Count == 0)
+			{
+				return items;
+			}
+
+			var (fn, desc) = _orderFns[0];
+			
+			var sorted = desc
+				? items.OrderByDescending(x => fn.Invoke(x))
+				: items.OrderBy(x => fn.Invoke(x));
+
+			for (var i = 1; i < _orderFns.Count; i++)
+			{
+				var (nextFn, nextDesc) = _orderFns[i];
+				sorted = nextDesc
+					? sorted.ThenByDescending(x => nextFn.Invoke(x))
+					: sorted.ThenBy(x => nextFn.Invoke(x));
+			}
+			return sorted;
 		}
 
-		public IComparable OrderBy(BKItem a)
+		private delegate IComparable OrderFn(BKItem item);
+		private readonly List<(OrderFn, bool)> _orderFns = new();
+		private string _raw;
+
+		private BKSort(string s)
 		{
-			return _orderFn.Invoke(a);
+			_raw = s;
+			if (s.Contains(','))
+			{
+				HashSet<EBKSortBy> usedKeys = new();
+				var segments = s.Split(',');
+				foreach (var segment in segments)
+				{
+					var (type, desc) = ParseSort(segment);
+					if (usedKeys.Add(type))
+					{
+						_orderFns.Add((GetFunction(type), desc));
+					}
+				}
+			}
+			else
+			{
+				var (type, desc) = ParseSort(s);
+				_orderFns.Add((GetFunction(type), desc));
+			}
 		}
 
-		private readonly Func<BKItem,BKItem,int> _compareFn;
-		private readonly Func<BKItem,IComparable> _orderFn;
+		private IComparable GetFileName(BKItem a) => a.FileName;
+		private IComparable GetTypeName(BKItem a) => a.MainType.Name;
+		private IComparable GetFileExtension(BKItem a) => a.FileExtension;
+		private IComparable GetFilePath(BKItem a) => a.FilePath;
 
-		private BKSort(EBKSortBy sort, bool desc)
+		private OrderFn GetFunction(EBKSortBy sort)
 		{
-			SortBy = sort;
-			Descending = desc;
-			_compareFn = sort == EBKSortBy.Name ? CompareName : CompareType;
-			_orderFn = sort == EBKSortBy.Name ? OrderByName : OrderByType;
+			return sort switch
+			{
+				EBKSortBy.Name => GetFileName,
+				EBKSortBy.Type => GetTypeName,
+				EBKSortBy.Path => GetFilePath,
+				EBKSortBy.Extension => GetFileExtension,
+				_ => GetFileName
+			};
 		}
-
-		private IComparable OrderByName(BKItem a) => a.FileName;
-		private IComparable OrderByType(BKItem a) => a.MainType.Name;
 
 		public static implicit operator string(BKSort s)
 		{
-			var m = s.Descending ? '-' : '\0';
-			var n = s.SortBy == EBKSortBy.Type ? 't' : 'n';
-			return $"{m}{n}";
+			return s._raw;
 		}
+
+		public override string ToString() => this;
 
 		public static implicit operator BKSort(string s)
 		{
@@ -53,40 +97,25 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			{
 				return null;
 			}
-			var (type, desc) = ParseSort(s);
-			return new BKSort(type, desc);
+			return new BKSort(s);
 		}
 
 		private static (EBKSortBy,bool) ParseSort(string sort)
 		{
-			if (sort.Length < 1)
+			sort = sort.Trim();
+			if (sort.Length == 0)
 			{
 				return default;
 			}
 			var desc = sort[0] == '-';
-			var type = sort[desc ? 1 : 0] == 't' ? EBKSortBy.Type : EBKSortBy.Name;
-			return (type, desc);
-		}
-
-		private int CompareName(BKItem a, BKItem b)
-		{
-			SwapIf(ref a, ref b, Descending);
-			return a.FileName.CompareTo(b);
-		}
-
-		private int CompareType(BKItem a, BKItem b)
-		{
-			SwapIf(ref a, ref b, Descending);
-			return String.Compare(a.MainType.Name, b.MainType.Name, StringComparison.Ordinal);
-		}
-
-		private static void SwapIf<T>(ref T a, ref T b, bool condition)
-		{
-			if (!condition)
+			var sorType = sort[desc ? 1 : 0] switch
 			{
-				return;
-			}
-			(a, b) = (b, a);
+				't' => EBKSortBy.Type,
+				'p' => EBKSortBy.Path,
+				'e' => EBKSortBy.Extension,
+				_ => EBKSortBy.Name
+			};
+			return (sorType, desc);
 		}
 	}
 }

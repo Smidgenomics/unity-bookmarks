@@ -4,14 +4,18 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 {
 	using System;
 	using System.Text.RegularExpressions;
-	using UnityEngine;
+	using Newtonsoft.Json;
 
+	[Serializable]
+	[JsonObject(MemberSerialization.OptIn)]
+	[JsonConverter(typeof(JsonToStringConverter))]
 	internal sealed class BKFilterRule
 	{
 		public bool IsValid => _fn != null;
 
 		public BKFilterRule(string rule)
 		{
+			_rule = rule;
 			if (rule == null || rule.Length < 3)
 			{
 				return;
@@ -56,7 +60,15 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		{
 			return new BKFilterRule(filter);
 		}
-		
+
+		public static implicit operator string(BKFilterRule fr)
+		{
+			return fr._rule;
+		}
+
+		public override string ToString() => this;
+
+		private readonly string _rule;
 		private readonly Regex _regex;
 		private readonly Type _type;
 		private readonly Func<BKItem, bool> _fn = GetFalse;

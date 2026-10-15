@@ -1,6 +1,6 @@
 {
 	"title":"Assets",
-	"defaultSort": "n",
+	"sort": "t,n",
 	"include":{
 		"queries":[
 			{

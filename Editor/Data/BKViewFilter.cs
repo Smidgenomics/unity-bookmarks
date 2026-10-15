@@ -18,13 +18,15 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public BKSort Sort => _sort;
 		public string ViewKey => _key ?? Title; // view key, serialized
 
+		public string Title => _title;
+		
 		// display name
-		[JsonProperty("title")] public string Title { get; private set; }
 		[JsonProperty("key")] private string _key;
+		[JsonProperty("title")] private string _title;
 		[JsonProperty("icon")] private string _iconRef; // guid/name
 		[JsonProperty("sort")] private BKSort _sort;
-		[JsonProperty("rules")] private BKFilterRule[] _filters;
 		[JsonProperty("op")] private string _op; // & or |
+		[JsonProperty("rules")] private BKFilterRule[] _filters;
 
 		// lazily loaded icon asset
 		private CachedLoad<Texture> _icon;
@@ -67,9 +69,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				}
 			}
 			return true;
-		
 		}
-
 
 	}
 }

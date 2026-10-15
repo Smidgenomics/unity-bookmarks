@@ -26,13 +26,9 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public string FilePath => _filePath.Value;
 		public UObject Asset => _asset.Value;
 		public Type MainType => _assetType.Value;
-		// public Texture ItemIcon => _icon.Value;
 		public LoadedIcon ItemIcon => _icon.Value;
 		public string FileExtension => _fileExt.Value;
-		
-
 		public BKProfile Profile { get; set; }
-
 		public bool IsDraggable() => ItemType == EBKItemType.Asset;
 		public bool IsValid() => !CheckInvalid();
 
@@ -55,11 +51,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public bool CanOpenFile()
 		{
-			if (ItemType == EBKItemType.Asset)
-			{
-				return BKUtils.CanOpenAsset(Asset);
-			}
-			return true;
+			return ItemType == EBKItemType.External || BKUtils.CanOpenAsset(Asset);
 		}
 
 		public void Open()
@@ -201,7 +193,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private string GetKnownPath() => _externalPath;
 		private string LoadAssetPathFromGUID() => AssetDatabase.GUIDToAssetPath(GUID);
 		private string LoadFileName() => BKUtils.FileNameFromPath(_filePath.Value);
-		private long LoadFileSize() => GetFileSize(_filePath.Value);
+		private long LoadFileSize() => BKUtils.GetFileSize(_filePath.Value);
 
 		private LoadedIcon LoadAssetIcon()
 		{
@@ -215,21 +207,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return ico;
 			}
 			return LoadedIcon.FromTexture(SearchUtils.GetTypeIcon(typeof(TextAsset)));
-		}
-
-		private static long GetFileSize(string path)
-		{
-			try
-			{
-				return File.Exists(path)
-				? new System.IO.FileInfo(path).Length
-				: 0;
-			}
-			catch
-			{
-				// ignored
-			}
-			return 0;
 		}
 	}
 }

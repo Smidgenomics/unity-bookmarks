@@ -57,7 +57,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			return assets;
 		}
 
-		// explicit asset GUIDs to include in list
+		// explicit asset guids/paths to include in list
 		[JsonProperty("refs")] private HashSet<string> _refs = new();
 
 		// asset find queries

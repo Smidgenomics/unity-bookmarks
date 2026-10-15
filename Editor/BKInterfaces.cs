@@ -7,8 +7,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	/// <summary>
 	/// Asset list provider
 	/// </summary>
-	internal interface IBKReader
+	internal interface IBKItemProvider
 	{
-		public IEnumerable<BKItem> Read();
+		public IEnumerable<BKItem> GetItems();
 	}
 }

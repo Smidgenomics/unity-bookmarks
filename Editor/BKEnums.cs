@@ -6,8 +6,9 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	{
 		// sort by file name
 		Name,
-		// sort by type name
-		Type
+		Type, // type name
+		Extension,
+		Path
 	}
 }
 

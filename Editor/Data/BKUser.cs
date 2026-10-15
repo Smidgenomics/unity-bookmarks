@@ -18,19 +18,28 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public event Action viewChanged;
 
-		public void AddGUID(string guid)
+		public void AddRef(string assetRef)
 		{
-			Profile?.AddGUID(guid);
+			if (Profile != null && Profile.AddRef(assetRef))
+			{
+				Refresh();
+			}
 		}
 
-		public void AddGUIDs(string[] guids)
+		public void AddRefs(string[] assetRefs)
 		{
-			Profile?.AddGUIDs(guids);
+			if (Profile != null && Profile.AddRefs(assetRefs))
+			{
+				Refresh();
+			}
 		}
 
-		public void RemoveGUID(string guid)
+		public void RemoveRef(string assetRef)
 		{
-			Profile?.RemoveGUID(guid);
+			if (Profile != null && Profile.RemoveRef(assetRef))
+			{
+				Refresh();
+			}
 		}
 
 		public bool HasProfile => Profile is { IsInvalid: false };
@@ -42,13 +51,18 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			set => UpdateFilter(value);
 		}
 
+		private void Refresh()
+		{
+			viewChanged?.Invoke();
+		}
+
 		private BKProfile Profile => GetProfile();
 
 		public IEnumerable<BKItem> Assets => GetAssets();
 
 		public BKViewFilter CurrentFilter => GetCurrentFilter();
 
-		public IEnumerable<BKViewFilter> Filters => ViewCount > 0 ? Profile.Filters : Array.Empty<BKViewFilter>();
+		public IEnumerable<BKViewFilter> Filters => Profile.Filters;
 
 		public string FilterKey
 		{
@@ -76,7 +90,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			LoadPath(_filePath); // load from scratch
 		}
 
-		public void Edit()
+		public void EditCurrentProfile()
 		{
 			if (_filePath == null)
 			{
@@ -115,7 +129,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				_filterParts[i] = _filterParts[i].Trim();
 			}
 			viewChanged?.Invoke();
-
 		}
 
 		private BKProfile GetProfile()
@@ -164,31 +177,26 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return Array.Empty<BKItem>();
 			}
 
-			var reader = Profile.GetReader();
+			var reader = Profile.GetItemProvider();
 			var currentView = GetCurrentFilter();
 
-			var r = reader.Read()
+			var r = reader.GetItems()
 			.Where(a => a && Filter(currentView, a));
 
 			var sort = currentView?.Sort ?? Profile.DefaultSort;
-
-			r = sort.Descending
-			? r.OrderByDescending(x => sort.OrderBy(x))
-			: r.OrderBy(x => sort.OrderBy(x));
-
-			return r;
+			return sort.OrderItems(r);
 		}
 
 		private BKViewFilter GetCurrentFilter()
 		{
-			var i = IndexOfView(_viewKey);
+			var i = IndexOfFilter(_viewKey);
 			return i == -1 ? null : GetFilterAtIndex(i);
 		}
 
 		private void SetFilter(string key)
 		{
 			_viewKey = null;
-			if(IndexOfView(key) > -1)
+			if(IndexOfFilter(key) > -1)
 			{
 				_viewKey = key; // finally, use key
 			}
@@ -197,12 +205,14 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private BKViewFilter GetFilterAtIndex(int i) => Profile.Filters[i];
 
-		private int IndexOfView(string key)
+		private int IndexOfFilter(string key)
 		{
 			for(var i = 0; i < ViewCount; i++)
 			{
-				var v = GetFilterAtIndex(i);
-				if(v.ViewKey == key) return i;
+				if (GetFilterAtIndex(i).ViewKey == key)
+				{
+					return i;
+				}
 			}
 			return -1;
 		}
@@ -230,16 +240,18 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private static BKProfile GetBK(BKUser h) => h._profile;
 
 		// init getter, loads profile
-		private static BKProfile InitBK(BKUser h) // init getter
+		private static BKProfile InitBK(BKUser u) // init getter
 		{
-			h._profile = BKProfile.LoadFromPath(h._filePath);
-			if(h._profile == null) { h._filePath = null; }
-			h._getFn = GetBK; // uses loaded value
+			u._profile = BKProfile.LoadFromPath(u._filePath);
+			if (u._profile == null)
+			{
+				u._filePath = null;
+			}
+			u._getFn = GetBK; // uses loaded value
 
+			u.viewChanged?.Invoke();
 
-			h.viewChanged?.Invoke();
-
-			return h._profile;
+			return u._profile;
 		}
 	}
 }
