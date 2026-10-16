@@ -98,7 +98,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public string footerText = "-";
 
 		[NonSerialized, DontCreateProperty] public BKUser user;
-		[NonSerialized, DontCreateProperty] public readonly List<BKItemViewData> items = new();
+
+		[CreateProperty] public readonly List<BKItemViewData> items = new();
 	}
 }
 

@@ -47,18 +47,23 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public BKMenuButton()
 		{
-			var styleAsset = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(_USS_GUID));
-			styleSheets.Add(styleAsset);
 			AddToClassList("bk-menubutton");
 			_icon = new Image();
 			_icon.AddToClassList("bk-menubutton__icon");
-			_icon.tintColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
+			// _icon.tintColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
 			Add(_icon);
 
 			var menuArrow = this.Q<VisualElement>(className: "unity-toolbar-menu__arrow");
 			Remove(menuArrow);
 			Add(menuArrow);
-
+			RegisterCallback<AttachToPanelEvent>(OnAttached);
 		}
+
+		private void OnAttached(AttachToPanelEvent ev)
+		{
+			var styleAsset = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(_USS_GUID));
+			styleSheets.Add(styleAsset);
+		}
+		
 	}
 }

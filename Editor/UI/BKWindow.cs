@@ -25,6 +25,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		// element refs
 		private ListView _itemList;
 		private ToolbarSearchField _search;
+		private VisualElement _filterBtn;
+		
 		private readonly BKWindowViewData _viewData = new(); // data bound to UI
 		private (bool, double) _bufferedFilter; // edited/time
 		[SerializeField] private BKUser _bkUser = new(); // view manager
@@ -114,6 +116,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			rootVisualElement.Add(win);
 			
 			_itemList = win.Q<ListView>();
+			_itemList.bindItem = OnBindListItem;
+			_itemList.itemsSource = _viewData.items;
 
 			_search = win.Q<ToolbarSearchField>();
 			_search.value = _bkUser.FilterString;
@@ -128,13 +132,12 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				_bufferedFilter = (true, EditorApplication.timeSinceStartup + BKConstants.SEARCH_BUFFER_TIME);
 			});
 
-			_itemList.bindItem = OnBindListItem;
-			_itemList.itemsSource = _viewData.items;
-
 			win.Q<ToolbarButton>(name:"Refresh").RegisterCallback<ClickEvent>(OnClickRefresh);
 			win.Q<VisualElement>(name:"Load").RegisterCallback<ClickEvent>(OnClickLoad);
-			win.Q<VisualElement>(name:"Filter").RegisterCallback<ClickEvent>(OnClickFilter);
 			win.Q<VisualElement>(name:"Sort").RegisterCallback<ClickEvent>(OnClickSort);
+
+			_filterBtn = win.Q<VisualElement>(name:"Filter");
+			_filterBtn.RegisterCallback<ClickEvent>(OnClickFilter);
 
 			OnViewChanged();
 		}
@@ -175,7 +178,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private void OnViewChanged()
 		{
 			_viewData.items.Clear();
-			foreach (var a in _bkUser.Assets)
+			_itemList?.Rebuild();
+			foreach (var a in _bkUser.VisibleAssets)
 			{
 				_viewData.items.Add(new BKItemViewData
 				{
@@ -183,7 +187,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				});
 			}
 			_itemList?.Rebuild();
+			_itemList?.MarkDirtyRepaint();
 			titleContent = new GUIContent(_bkUser.GetDisplayTitle(), _bkUser.GetDisplayIcon());
+
+			_filterBtn?.Q<Image>()?.MarkDirtyRepaint();
 		}
 
 		private void OnItemContext(BKItem a)

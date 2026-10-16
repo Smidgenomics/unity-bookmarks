@@ -58,7 +58,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private BKProfile Profile => GetProfile();
 
-		public IEnumerable<BKItem> Assets => GetAssets();
+		public IEnumerable<BKItem> VisibleAssets => GetAssets();
 
 		public BKViewFilter CurrentFilter => GetCurrentFilter();
 
@@ -156,7 +156,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 			if (_filterParts.Length > 0)
 			{
-				var name = a.FileName;
+				var name = a.FileName.ToLower();
 
 				foreach (var p in _filterParts)
 				{
