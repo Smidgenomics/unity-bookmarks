@@ -5,6 +5,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using System;
 	using System.Collections.Generic;
 	using System.Linq;
+	using System.Text;
 	using Newtonsoft.Json;
 
 	/// <summary>
@@ -15,7 +16,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	[JsonConverter(typeof(JsonToStringConverter))]
 	internal sealed class BKSort
 	{
-		public static readonly BKSort Default = new ("n");
+		public static readonly BKSort Default = new ("t,n");
 
 		public IEnumerable<BKItem> OrderItems(IEnumerable<BKItem> items)
 		{
@@ -24,7 +25,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return items;
 			}
 
-			var (fn, desc) = _orderFns[0];
+			var (_, fn, desc) = _orderFns[0];
 			
 			var sorted = desc
 			? items.OrderByDescending(x => fn.Invoke(x))
@@ -32,7 +33,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 			for (var i = 1; i < _orderFns.Count; i++)
 			{
-				var (nextFn, nextDesc) = _orderFns[i];
+				var (_, nextFn, nextDesc) = _orderFns[i];
 				sorted = nextDesc
 				? sorted.ThenByDescending(x => nextFn.Invoke(x))
 				: sorted.ThenBy(x => nextFn.Invoke(x));
@@ -41,7 +42,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		}
 
 		private delegate IComparable OrderFn(BKItem item);
-		private readonly List<(OrderFn, bool)> _orderFns = new();
+		private readonly List<(EBKSortBy, OrderFn, bool)> _orderFns = new();
 		private string _raw;
 
 		private BKSort(string s)
@@ -56,14 +57,14 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 					var (type, desc) = ParseSort(segment);
 					if (usedKeys.Add(type))
 					{
-						_orderFns.Add((GetFunction(type), desc));
+						_orderFns.Add((type, GetFunction(type), desc));
 					}
 				}
 			}
 			else
 			{
 				var (type, desc) = ParseSort(s);
-				_orderFns.Add((GetFunction(type), desc));
+				_orderFns.Add((type, GetFunction(type), desc));
 			}
 		}
 
@@ -86,7 +87,26 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public static implicit operator string(BKSort s)
 		{
-			return s._raw;
+			if (s._orderFns.Count == 0)
+			{
+				return Default._raw;
+			}
+			var sb = new StringBuilder();
+			var i = -1;
+			foreach (var (type, fn, desc) in s._orderFns)
+			{
+				i++;
+				if (desc)
+				{
+					sb.Append('-');
+				}
+				sb.Append(char.ToLower(type.ToString()[0]));
+				if (i < s._orderFns.Count - 1)
+				{
+					sb.Append(',');
+				}
+			}
+			return sb.ToString();
 		}
 
 		public override string ToString() => this;
