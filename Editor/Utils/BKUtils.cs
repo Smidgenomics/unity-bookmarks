@@ -10,6 +10,21 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	// misc helper functions
 	internal static class BKUtils
 	{
+		public static bool IsProjectRelativeFile(string path)
+		{
+			var root = Path.GetFullPath(BKConstants.PROJECT_ROOT);
+			var sub = Path.GetFullPath(path);
+			return sub.StartsWith(root);
+			// return true;
+		}
+
+		public static string AbbreviateFilePath(string path)
+		{
+			var firstFolder = path.Substring(0, path.IndexOf('/'));
+			var fileName = path.Substring(path.LastIndexOf('/') + 1);
+			return $"{firstFolder}/../{fileName}";
+		}
+
 		public static long GetLastFileEditTime(string filePath)
 		{
 			return File.GetLastWriteTime(filePath).ToFileTime();
@@ -42,6 +57,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public static bool CanOpenAsset(UnityEngine.Object ob)
 		{
+			if (ob.GetType() == typeof(TextAsset))
+			{
+				return true;
+			}
 #if UNITY_6000_3_OR_NEWER
 			return AssetDatabase.CanOpenAssetInEditor(ob.GetEntityId());
 #else

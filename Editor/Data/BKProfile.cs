@@ -6,6 +6,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using System;
 	using System.Collections.Generic;
 	using System.IO;
+	using UnityEditor;
 	using UnityEngine;
 
 	/// <summary>
@@ -78,9 +79,13 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			{
 				return null;
 			}
-			var json = File.ReadAllText(path);
+
+			var fPath = Path.GetFullPath(path).Replace('\\', '/');
+
+			var json = File.ReadAllText(fPath);
 			var profile = JsonConvert.DeserializeObject<BKProfile>(json, GetSerializerSettings());
-			profile.FilePath = $"{BKConstants.PROJECT_ROOT}/{path}";
+			// profile.FilePath = $"{BKConstants.PROJECT_ROOT}/{path}";
+			profile.FilePath = fPath;
 			profile._lastEdited = BKUtils.GetLastFileEditTime(profile.FilePath);
 			profile.ProjectPath = path;
 			return profile;
@@ -109,12 +114,25 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			FindBookmarks("ProjectSettings/bookmarks", paths);
 			FindBookmarks("UserSettings/bookmarks", paths);
 
+			// TODO: Make loading of examples configurable
+			List<string> packagePaths = new();
+			
+			FindBookmarks("Packages/com.smidgenomics.unity-bookmarks/Examples", packagePaths);
+
 			var options = new List<(string, string)>();
 			
 			foreach (var path in paths)
 			{
 				options.Add((ProfileLabelFromPath(path), path));
 			}
+
+			foreach (var ppath in packagePaths)
+			{
+				var pLabel = ppath.Substring(ppath.LastIndexOf('/') + 1);
+				pLabel = pLabel.Replace(".bk.json", "");
+				options.Add(($"Examples/{pLabel}", ppath));
+			}
+
 			return options;
 		}
 
@@ -129,10 +147,15 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private static void FindBookmarks(string dir, List<string> paths)
 		{
-			var files = BKUtils.ListFiles(dir, FILE_PATTERN, true);
+			var fullDir = Path.GetFullPath(dir);
+			var files = BKUtils.ListFiles(fullDir, FILE_PATTERN, true);
+
+			var cutoff = fullDir.Length - dir.Length;
+
 			foreach (var uf in files)
 			{
-				paths.Add(uf.Replace(@"\", "/"));
+				var p = uf.Substring(cutoff).Replace(@"\", "/");
+				paths.Add(p);
 			}
 		}
 

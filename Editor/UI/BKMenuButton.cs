@@ -10,14 +10,13 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using UnityEngine;
 	using UnityEngine.UIElements;
 
+	// Note: Exists to add icon to button
 	[System.Serializable]
 	[UxmlElement("BKToolbarMenu", libraryPath = "Bookmarks")]
 	[Icon("UIToolkit/Icons/ToolbarMenu.png")]
 	internal sealed partial class BKMenuButton : ToolbarMenu
 	{
-		private const string _USS_GUID = "d21c4d72d983cfb41b9905657e88c2a4";
-
-		private Image _icon;
+		private const string _USS_CLASS = "sm-bookmarks__toolbar__menu";
 
 		[UxmlAttribute, CreateProperty]
 		public Rect UV
@@ -47,23 +46,15 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public BKMenuButton()
 		{
-			AddToClassList("bk-menubutton");
+			AddToClassList(_USS_CLASS);
 			_icon = new Image();
-			_icon.AddToClassList("bk-menubutton__icon");
-			// _icon.tintColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
 			Add(_icon);
-
 			var menuArrow = this.Q<VisualElement>(className: "unity-toolbar-menu__arrow");
 			Remove(menuArrow);
 			Add(menuArrow);
-			RegisterCallback<AttachToPanelEvent>(OnAttached);
 		}
-
-		private void OnAttached(AttachToPanelEvent ev)
-		{
-			var styleAsset = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(_USS_GUID));
-			styleSheets.Add(styleAsset);
-		}
+		
+		private Image _icon;
 		
 	}
 }

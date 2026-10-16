@@ -26,7 +26,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		private ListView _itemList;
 		private ToolbarSearchField _search;
 		private VisualElement _filterBtn;
-		
 		private readonly BKWindowViewData _viewData = new(); // data bound to UI
 		private (bool, double) _bufferedFilter; // edited/time
 		[SerializeField] private BKUser _bkUser = new(); // view manager
@@ -49,7 +48,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			{
 				GUIUtility.systemCopyBuffer = a.GUID;
 			}),
-			(new GUIContent("Copy Path"), IsAsset, (_,a) =>
+			(new GUIContent("Copy Path"), null, (_,a) =>
 			{
 				GUIUtility.systemCopyBuffer = a.FilePath;
 			}),
@@ -57,7 +56,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			{
 				GUIUtility.systemCopyBuffer = a.MainType.Name;
 			}),
-			(null, IsAsset, null),
+			default,
 			(new GUIContent("Exclude"), null, (u,a) =>
 			{
 				if (a.ItemType == EBKItemType.Asset)
@@ -144,7 +143,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private void OnBindListItem(VisualElement el, int i)
 		{
-			el.userData = _viewData.items[i].asset;
+			el.userData = _viewData.items[i].item;
 
 			// register handlers only once
 			if (!el.ClassListContains("events"))
@@ -175,6 +174,20 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 		}
 
+		private void OpenFilePicker()
+		{
+			var path = EditorUtility.OpenFilePanel("Load Bookmarks", "/","bk.json");
+
+			if (path.Length < BKConstants.PROJECT_ROOT.Length)
+			{
+				return;
+			}
+			path = path[(BKConstants.PROJECT_ROOT.Length + 1)..];
+			_viewData.items.Clear();
+			_bkUser.Load(path);
+			OnViewChanged();
+		}
+
 		private void OnViewChanged()
 		{
 			_viewData.items.Clear();
@@ -183,7 +196,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			{
 				_viewData.items.Add(new BKItemViewData
 				{
-					asset = a
+					item = a,
+					prefs = _viewData.prefs
 				});
 			}
 			_itemList?.Rebuild();
@@ -223,9 +237,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return;
 			}
 			var sz = BKUtils.FormatFileSize(a.FileSize);
-			var txt = $"{a.FilePath} // {sz}";
+			var path = BKUtils.AbbreviateFilePath(a.FilePath);
+			var txt = $"{path} // {sz}";
 			_viewData.footerText = txt;
 			a.Select();
+			_viewData.prefs.lastClicked = a;
 		}
 
 		private void OnClickRefresh(ClickEvent ev)
@@ -240,7 +256,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				allowDuplicateNames = true
 			};
 
-			if (_bkUser.HasProfile)
+			if (_bkUser.HasProfile && _bkUser.CanEditCurrentProfile())
 			{
 				m.AddItem(_LB_EDIT, false, _bkUser.EditCurrentProfile);
 				m.AddSeparator(string.Empty);
@@ -259,6 +275,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 					OnViewChanged();
 				});
 			}
+			
+			m.AddSeparator(string.Empty);
+
+			m.AddItem(new GUIContent("File..."), false, OpenFilePicker);
 
 			if (ev.target is VisualElement _)
 			{

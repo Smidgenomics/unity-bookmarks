@@ -3,6 +3,8 @@
 	padding:0;
 	margin:0;
 	height:100%;
+	--bk-item-font-size:12px;
+	--bk-item-icon-size:15px;
 }
 
 .sm-bookmarks__item {
@@ -11,43 +13,26 @@
 	height:100%;
 }
 
-.sm-bookmarks__item:hover .sm-bookmarks__item__edit {
-	/*opacity:1;*/
-}
- 
-.sm-bookmarks__item__edit:hover {
-	background-color:#fff2;
-}
-
-.sm-bookmarks__item__edit:hover {
-	/*opacity:1;*/
-}
-
-.sm-bookmarks__item__edit {
-	/*opacity:0;*/
-	opacity:0;
-	background-color:#0000;
-	margin:0;
-	border-width:0;
-	padding:0;
-	border-radius:4px;
-}
-
 .sm-bookmarks__item__icon {
 	display: flex;
-	width:15px;
+	width:var(--bk-item-icon-size);
 	margin:2px;
-	margin-left:4px;
-	margin-right:4px;
 }
 
 .sm-bookmarks__item__label {
 	padding:0;
 	margin:0;
+	margin-left:3px;
 	-unity-text-align: middle-left;
 	flex-grow:1;
 	height:100%;
-	font-size:11px;
+	font-size:var(--bk-item-font-size);
 	color:var(--unity-colors-default-text);
-	
+}
+
+.sm-bookmarks__item__type-icon {
+	display: flex;
+	width:10px;
+	margin:2px;
+	opacity:1;
 }

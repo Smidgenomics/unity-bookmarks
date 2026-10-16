@@ -90,9 +90,18 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			LoadPath(_filePath); // load from scratch
 		}
 
+		public bool CanEditCurrentProfile()
+		{
+			if (string.IsNullOrEmpty(_filePath))
+			{
+				return false;
+			}
+			return BKUtils.IsProjectRelativeFile(_filePath);
+		}
+
 		public void EditCurrentProfile()
 		{
-			if (_filePath == null)
+			if (!CanEditCurrentProfile())
 			{
 				return;
 			}

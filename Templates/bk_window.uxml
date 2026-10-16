@@ -1,24 +1,30 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Packages/com.smidgenomics.unity-bookmarks/Templates/bk_window.uss?fileID=7433441132597879392&amp;guid=4c0418fc6381ee1469c871c11bb56bf5&amp;type=3#bk_window"/>
     <uie:Toolbar name="Toolbar" data-source-type="Smidgenomics.Unity.Bookmarks.Editor.BKWindowViewData, Smidgenomics.Unity.Bookmarks.Editor" class="sm-bookmarks__toolbar">
-        <Smidgenomics.Unity.Bookmarks.Editor.BKToolbarMenu image="project://database/Packages/com.smidgenomics.unity-bookmarks/Assets/%7Bsm_bk%7D.png?fileID=2800000&amp;guid=cd57f4841c2dfd44d817b21efe0189f4&amp;type=3#{sm_bk}" name="Load" u-v="0,0.75,0.25,0.25"/>
-        <Smidgenomics.Unity.Bookmarks.Editor.BKToolbarMenu image="project://database/Packages/com.smidgenomics.unity-bookmarks/Assets/%7Bsm_bk%7D.png?fileID=2800000&amp;guid=cd57f4841c2dfd44d817b21efe0189f4&amp;type=3#{sm_bk}" name="Filter" u-v="0.5,0.75,0.25,0.25">
+        <Smidgenomics.Unity.Bookmarks.Editor.BKToolbarMenu image="project://database/Packages/com.smidgenomics.unity-bookmarks/Assets/%7Bsm_bk%7D.png?fileID=2800000&amp;guid=cd57f4841c2dfd44d817b21efe0189f4&amp;type=3#{sm_bk}" name="Load" u-v="0,0.75,0.25,0.25" tooltip="Load bookmarks"/>
+        <Smidgenomics.Unity.Bookmarks.Editor.BKToolbarMenu image="project://database/Packages/com.smidgenomics.unity-bookmarks/Assets/%7Bsm_bk%7D.png?fileID=2800000&amp;guid=cd57f4841c2dfd44d817b21efe0189f4&amp;type=3#{sm_bk}" name="Filter" u-v="0.5,0.75,0.25,0.25" tooltip="Select view">
             <Bindings>
                 <ui:DataBinding property="style.display" data-source-path="filterDisplayStyle" data-source-type="Smidgenomics.Unity.Bookmarks.Editor.BKWindowViewData, Smidgenomics.Unity.Bookmarks.Editor" binding-mode="ToTarget"/>
                 <ui:DataBinding property="UV" data-source-path="filterUV" binding-mode="ToTarget"/>
             </Bindings>
         </Smidgenomics.Unity.Bookmarks.Editor.BKToolbarMenu>
-        <uie:ToolbarSearchField/>
-        <Smidgenomics.Unity.Bookmarks.Editor.BKToolbarButton icon-image="project://database/Packages/com.smidgenomics.unity-bookmarks/Assets/%7Bsm_bk%7D.png?fileID=2800000&amp;guid=cd57f4841c2dfd44d817b21efe0189f4&amp;type=3#{sm_bk}" u-v="0.5,0.5,0.25,0.25" name="Refresh"/>
+        <uie:ToolbarSearchField name="Search"/>
+        <Smidgenomics.Unity.Bookmarks.Editor.BKToolbarButton icon-image="project://database/Packages/com.smidgenomics.unity-bookmarks/Assets/%7Bsm_bk%7D.png?fileID=2800000&amp;guid=cd57f4841c2dfd44d817b21efe0189f4&amp;type=3#{sm_bk}" u-v="0.5,0.5,0.25,0.25" name="Refresh" tooltip="Refresh list"/>
         <Smidgenomics.Unity.Bookmarks.Editor.BKToolbarMenu image="project://database/Packages/com.smidgenomics.unity-bookmarks/Assets/%7Bsm_bk%7D.png?fileID=2800000&amp;guid=cd57f4841c2dfd44d817b21efe0189f4&amp;type=3#{sm_bk}" name="Sort" u-v="0,0.5,0.25,0.25" style="visibility: hidden; display: none;"/>
     </uie:Toolbar>
     <ui:VisualElement name="Content" class="sm-bookmarks__content">
-        <ui:ListView selection-type="None" allow-add="false" allow-remove="false" item-template="project://database/Packages/com.smidgenomics.unity-bookmarks/Templates/bk_item.uxml?fileID=9197481963319205126&amp;guid=eba35fa7835258543b2bc1c1234bab6b&amp;type=3#bk_item" binding-source-selection-mode="AutoAssign" name="ListView" show-bound-collection-size="false" show-border="false" style="width: 100%; height: 100%;"/>
+        <ui:ListView selection-type="None" allow-add="false" allow-remove="false" item-template="project://database/Packages/com.smidgenomics.unity-bookmarks/Templates/bk_item.uxml?fileID=9197481963319205126&amp;guid=eba35fa7835258543b2bc1c1234bab6b&amp;type=3#bk_item" binding-source-selection-mode="AutoAssign" name="ListView" show-bound-collection-size="false" show-border="false" fixed-item-height="18" style="width: 100%; height: 100%;"/>
     </ui:VisualElement>
     <uie:Toolbar name="Footer" data-source-type="Smidgenomics.Unity.Bookmarks.Editor.BKWindowViewData, Smidgenomics.Unity.Bookmarks.Editor" class="sm-bookmarks__footer">
-        <ui:Label text="Path">
+        <ui:Label text="Path" name="Path" class="flex-grow-1 sm-bookmarks__footer__path">
             <Bindings>
-                <ui:DataBinding property="text" data-source-path="footerText" binding-mode="ToTarget"/>
+                <ui:DataBinding property="text" data-source-path="currentPath" binding-mode="ToTarget"/>
+                <ui:DataBinding property="tooltip" data-source-path="currentPath" binding-mode="ToTarget"/>
+            </Bindings>
+        </ui:Label>
+        <ui:Label text="Size" name="Size" class="flex-grow-0 sm-bookmarks__footer__size">
+            <Bindings>
+                <ui:DataBinding property="text" data-source-path="currentSize" binding-mode="ToTarget"/>
             </Bindings>
         </ui:Label>
     </uie:Toolbar>

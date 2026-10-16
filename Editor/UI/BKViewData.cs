@@ -15,12 +15,19 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	internal struct BKItemViewData
 	{
 		[CreateProperty]
-		public string label =>
-		asset.ItemType == EBKItemType.Asset
-		? asset.FileName
-		: $"{asset.FileName}.{asset.FileExtension}";
+		public string label
+		{
+			get
+			{
+				return item.FileName;
+				// item.ItemType == EBKItemType.Asset
+				// ? item.FileName
+				// : $"{item.FileName}.{item.FileExtension}";
+			}
+		}
+		
 
-		[CreateProperty] public Texture icon => asset?.ItemIcon.tex;
+		[CreateProperty] public Texture icon => item?.ItemIcon.tex;
 
 		[CreateProperty]
 		public Rect uv
@@ -31,8 +38,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				{
 					return default;
 				}
-				var icoUV = asset.ItemIcon.uv.Value;
-				// icoUV.y = 1 - icoUV.y; // toolkit uvs are flipped
+				var icoUV = item.ItemIcon.uv.Value;
 				var pos = icoUV.position;
 				pos.y = 1 - (pos.y + icoUV.size.y);
 				icoUV.position = pos;
@@ -40,18 +46,49 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 		}
 		
-		
 		[CreateProperty]
-		public Color IconBackgroundColor => icon ? asset.ItemIcon.bg : default;
+		public Rect typeUV
+		{
+			get
+			{
+				if (!string.IsNullOrEmpty(item.GUID))
+				{
+					var p = item.FilePath;
+
+					// Packages/
+					if (p[0] == 'P')
+					{
+						return new Rect(0.25f, 0.25f, 0.25f, 0.25f);
+					}
+					return default;
+				}
+				
+				// outside assets/packages
+				return new Rect(0.5f, 0.25f, 0.25f, 0.25f);
+			}
+		}
+
+		// [CreateProperty] public Color TypeIconTint => EditorGUIUtility.isProSkin ? Color.white : Color.black;
+		[CreateProperty] public Color TypeIconTint => Color.white;
+
+		[CreateProperty] public Color IconBackgroundColor => icon ? item.ItemIcon.bg : default;
 
 		[CreateProperty]
-		public Color BGColor => (asset?.IsSelected() ?? false) ? BKConstants.SELECT_COLOR : Color.clear;
+		public Color BGColor
+		{
+			get
+			{
+				bool selected =  prefs?.lastClicked == item;
+
+				return selected ? BKConstants.SELECT_COLOR : Color.clear;
+			}
+		}
 
 		[CreateProperty]
-		public Color IconTint => icon ? asset.ItemIcon.tint : default;
+		public Color IconTint => icon ? item.ItemIcon.tint : default;
 
 		[DontCreateProperty] public BKItemViewPrefs prefs;
-		[DontCreateProperty] public BKItem asset;
+		[DontCreateProperty] public BKItem item;
 	}
 }
 
@@ -97,7 +134,16 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public string footerText = "-";
 
+		[CreateProperty]
+		public string currentPath => prefs.lastClicked?.FilePath;
+
+		[CreateProperty]
+		public string currentSize => prefs.lastClicked != null
+		? BKUtils.FormatFileSize(prefs.lastClicked.FileSize)
+		: "";
+		
 		[NonSerialized, DontCreateProperty] public BKUser user;
+		[NonSerialized, DontCreateProperty] public readonly BKItemViewPrefs prefs = new();
 
 		[CreateProperty] public readonly List<BKItemViewData> items = new();
 	}
@@ -112,6 +158,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	[Serializable]
 	internal sealed class BKItemViewPrefs
 	{
+		public BKItem lastClicked;
 	
 	}
 }

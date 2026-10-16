@@ -23,5 +23,3 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	}
 
 }
-
-

@@ -197,6 +197,10 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private LoadedIcon LoadAssetIcon()
 		{
+			if (Profile != null && Profile.TryGetIcon(FileExtension, out var ico))
+			{
+				return ico;
+			}
 			return LoadedIcon.FromTexture(AssetDatabase.GetCachedIcon(_filePath.Value));
 		}
 

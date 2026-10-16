@@ -1,7 +1,5 @@
 // smidgens @ github
 
-#pragma warning disable 0414
-
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
 	using global::Unity.Properties;
@@ -10,12 +8,13 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using UnityEngine;
 	using UnityEngine.UIElements;
 
+	// Note: Only exists to expose UV property of icon
 	[System.Serializable]
 	[UxmlElement("BKToolbarButton", libraryPath = "Bookmarks")]
 	[Icon("UIToolkit/Icons/ToolbarButton.png")]
 	internal sealed partial class BKToolbarButton : ToolbarButton
 	{
-		private const string _USS_GUID = "a4c982adbd92b53408e1c7bce4e57bd2";
+		private const string _USS_CLASS = "sm-bookmarks__toolbar__button";
 		
 		[UxmlAttribute, CreateProperty]
 		public Rect UV
@@ -34,10 +33,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public BKToolbarButton()
 		{
-			var styleAsset = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(_USS_GUID));
-			styleSheets.Add(styleAsset);
-			AddToClassList("bk-toolbar__button");
-
+			AddToClassList(_USS_CLASS);
 		}
 
 		private Image GetIconImage()

@@ -6,6 +6,14 @@
 	height: 100%;
 }
 
+.flex-grow-1 {
+	flex-grow:1;
+}
+
+.flex-grow-0 {
+	flex-grow:0;
+}
+
 .sm-bookmarks__window {
 	display: flex;
 	flex-direction: column;
@@ -22,21 +30,32 @@
 .sm-bookmarks__footer {
 	display: flex;
 	flex-grow: 0;
+	padding:2px;
+	overflow: hidden;
 }
 
 .sm-bookmarks__content {
 	flex-grow: 1;
 }
 
-.sm-bookmarks__toolbar-flex {
+.sm-bookmarks__flex {
 	margin: auto;
 }
 
-.sm-bookmarks__footer .unity-text-element {
-	flex-grow: 0;
+.sm-bookmarks__footer__path {
 	-unity-text-align: middle-left;
 	color:var(--unity-colors-default-text);
-	font-size:10px;
+	font-size:8px;
+	flex-shrink:1;
+}
+
+.sm-bookmarks__footer__size {
+	-unity-text-align: middle-right;
+	color:var(--unity-colors-default-text);
+	font-size:9px;
+	-unity-font-style: bold;
+	width:25px;
+	flex-shrink:1;
 }
 
 .unity-toolbar-search-field {
@@ -45,5 +64,26 @@
 	flex-shrink: 1;
 }
 
-.bk-toolbar__button {
+.sm-bookmarks__toolbar__menu {
+	min-width:35px;
+	width:35px;
+}
+
+.sm-bookmarks__toolbar__menu .unity-image {
+	aspect-ratio:1;
+	width:15px;
+	opacity: 0.5;
+}
+
+.sm-bookmarks__toolbar__button {
+	width:29px;
+	min-width:29px;
+}
+
+.sm-bookmarks__toolbar__button .unity-image {
+	aspect-ratio:1;
+	width:15px;
+	min-width:15px;
+	height:100%;
+	opacity: 0.5;
 }
