@@ -17,6 +17,7 @@
 	display: flex;
 	width:var(--bk-item-icon-size);
 	margin:2px;
+	flex-shrink: 0;
 }
 
 .sm-bookmarks__item__label {
@@ -28,6 +29,9 @@
 	height:100%;
 	font-size:var(--bk-item-font-size);
 	color:var(--unity-colors-default-text);
+	text-overflow: ellipsis;
+	flex-shrink: 1;
+	overflow:hidden;
 }
 
 .sm-bookmarks__item__type-icon {
@@ -35,4 +39,5 @@
 	width:10px;
 	margin:2px;
 	opacity:1;
+	flex-shrink:0;
 }

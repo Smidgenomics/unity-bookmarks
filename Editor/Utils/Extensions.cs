@@ -2,6 +2,7 @@
 
 namespace Smidgenomics.Unity.Bookmarks.Editor
 {
+	using UnityEngine;
 	using System.Text.RegularExpressions;
 
 	/// <summary>
@@ -17,6 +18,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		// shorthand for string.IsNullOrEmpty(s)
 		public static bool IsNullOrEmpty(this string s) => string.IsNullOrEmpty(s);
+
+		public static void CopyToClipboard(this string s) => GUIUtility.systemCopyBuffer = s;
 
 		private static readonly Regex _GUID_REGEX = new ("^([a-f]|[0-9]){32}$");
 	}

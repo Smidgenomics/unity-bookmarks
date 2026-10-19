@@ -107,7 +107,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		{
 			return a.ItemType == EBKItemType.Asset ? a.GUID : a.FilePath;
 		}
-		
+
 		// truthy value depends on asset existing
 		public static implicit operator bool(BKItem a) => a != null && a.IsValid();
 
@@ -206,7 +206,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		private LoadedIcon GetExternalIcon()
 		{
-			if (Profile != null && Profile.TryGetIcon(FileExtension, out var ico))
+			if (Profile != null && Profile.TryGetIcon(FilePath, out var ico))
 			{
 				return ico;
 			}

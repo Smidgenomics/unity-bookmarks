@@ -17,16 +17,15 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public Texture Icon => _icon.Value;
 		public BKSort Sort => _sort;
 		public string ViewKey => _key ?? Title; // view key, serialized
-
 		public string Title => _title;
-		
+
 		// display name
 		[JsonProperty("key")] private string _key;
 		[JsonProperty("title")] private string _title;
 		[JsonProperty("icon")] private string _iconRef; // guid/name
 		[JsonProperty("sort")] private BKSort _sort;
 		[JsonProperty("op")] private string _op; // & or |
-		[JsonProperty("rules")] private BKFilterRule[] _filters;
+		[JsonProperty("rules")] private BKFilterRule[] _rules;
 
 		// lazily loaded icon asset
 		private CachedLoad<Texture> _icon;
@@ -36,18 +35,21 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			_icon = new CachedLoad<Texture>(LoadIcon);
 		}
 
-		private Texture LoadIcon() => BKUtils.LoadTexture(_iconRef);
+		private Texture LoadIcon()
+		{
+			return BKUtils.LoadTexture(_iconRef);
+		}
 
 		public bool Contains(BKItem asset)
 		{
-			if (_filters == null)
+			if (_rules == null)
 			{
 				return false;
 			}
 
 			if (_op == "|")
 			{
-				foreach (var f in _filters)
+				foreach (var f in _rules)
 				{
 					if (f.IsMatch(asset))
 					{
@@ -57,7 +59,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return false;
 			}
 
-			foreach (var f in _filters)
+			foreach (var f in _rules)
 			{
 				if (f is not { IsValid: true })
 				{

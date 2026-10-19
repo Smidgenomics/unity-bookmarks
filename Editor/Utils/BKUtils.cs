@@ -18,13 +18,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			// return true;
 		}
 
-		public static string AbbreviateFilePath(string path)
-		{
-			var firstFolder = path.Substring(0, path.IndexOf('/'));
-			var fileName = path.Substring(path.LastIndexOf('/') + 1);
-			return $"{firstFolder}/../{fileName}";
-		}
-
 		public static long GetLastFileEditTime(string filePath)
 		{
 			return File.GetLastWriteTime(filePath).ToFileTime();
@@ -85,7 +78,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 			if (guidOrName.IsGUID())
 			{
-				return AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath(guidOrName));
+				var t = AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath(guidOrName));
+				return t;
 			}
 			return EditorGUIUtility.IconContent(guidOrName)?.image;
 		}

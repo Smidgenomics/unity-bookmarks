@@ -28,6 +28,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 			return changed;
 		}
+
 		public bool RemoveRef(string guidOrPath)
 		{
 			return _refs.Remove(guidOrPath);

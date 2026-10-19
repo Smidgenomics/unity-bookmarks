@@ -1,5 +1,5 @@
 {
-	"title":"Data",
+	"title":"External",
 	"sort": "e,n",
 	"fileIcons":{
 		"toml":{
@@ -22,7 +22,7 @@
 			"tex":"24a93f97c8ef6bc46a49a7a7370dfc64",
 			"uv":"2/8"
 		},
-		"asset":{
+		"ProjectSettings/*.asset":{
 			"tex":"UnityLogo"
 		}
 	},

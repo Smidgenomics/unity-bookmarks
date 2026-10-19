@@ -9,7 +9,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "BK.Newtonsoft.Json.dll"
+        "Smidgenomics.Unity.Bookmarks.Newtonsoft.Json.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

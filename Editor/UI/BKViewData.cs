@@ -132,10 +132,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 		}
 
-		public string footerText = "-";
-
-		[CreateProperty]
-		public string currentPath => prefs.lastClicked?.FilePath;
+		[CreateProperty] public string currentPath => prefs.lastClicked?.FilePath;
 
 		[CreateProperty]
 		public string currentSize => prefs.lastClicked != null

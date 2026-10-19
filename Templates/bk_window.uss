@@ -47,6 +47,10 @@
 	color:var(--unity-colors-default-text);
 	font-size:8px;
 	flex-shrink:1;
+	overflow:hidden;
+	text-overflow: ellipsis;
+	text-shadow: #0008 1px 0 10px;
+	margin-right:3px;
 }
 
 .sm-bookmarks__footer__size {
@@ -77,7 +81,7 @@
 
 .sm-bookmarks__toolbar__button {
 	width:29px;
-	min-width:29px;
+	flex-shrink:0;
 }
 
 .sm-bookmarks__toolbar__button .unity-image {

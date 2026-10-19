@@ -4,9 +4,9 @@
 	"include":{
 		"queries":[
 			{
-				"filter":"t:Prefab t:Material t:Texture2D",
+				"filter":"t:Prefab t:Material t:Texture2D t:AudioClip t:Shader",
 				"folders":[
-					"Assets/"
+					"Assets"
 				]
 			}
 		]
@@ -18,23 +18,39 @@
 			"icon":"Material Icon",
 			"op":"&",
 			"rules": [
-				"t:*Material*"
+				"p:*.mat"
 			]
 		},
 		{
 			"key":"pf",
 			"title": "Prefabs",
-			"icon":"ViewToolMove On@2x",
+			"icon":"Prefab Icon",
 			"rules": [
-				"t:*GameObject*"
+				"p:*.prefab"
 			]
 		},
 		{
 			"key":"tx",
 			"title": "Textures",
-			"icon":"AvatarSelector@2x",
+			"icon":"Texture2D Icon",
 			"rules": [
 				"t:*Texture2D*"
+			]
+		},
+		{
+			"key":"audio",
+			"title": "Sounds",
+			"icon":"AudioClip Icon",
+			"rules": [
+				"t:*AudioClip*"
+			]
+		},
+		{
+			"key":"sh",
+			"title": "Shaders",
+			"icon":"Shader Icon",
+			"rules": [
+				"p:*.shader"
 			]
 		}
 	]

@@ -16,10 +16,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		public static void Open() => CreateWindow<BKWindow>(_DOCK_TYPES).Show();
 
 		// context menu handler
-		private delegate void AssetContextFn(BKUser u, BKItem a);
-		private delegate bool AssetContextGuard(BKUser u, BKItem a);
+		private delegate void AssetContextFn(in ItemActionContext ctx);
+		private delegate bool AssetContextGuard(in ItemActionContext ctx);
 
 		private static readonly GUIContent _LB_EDIT = new ("Edit...");
+		private static readonly GUIContent _LB_OPEN = new ("Open...");
 		private static readonly GUIContent _LB_ALL = new ("All");
 
 		// element refs
@@ -37,28 +38,36 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			Type.GetType("UnityEditor.ProjectBrowser, UnityEditor.CoreModule")
 		};
 
-		private static bool IsAsset(BKUser u, BKItem a) => a.ItemType == EBKItemType.Asset;
-		private static bool IsExternal(BKUser u, BKItem a) => a.ItemType == EBKItemType.External;
-		private static bool CanOpenItem(BKUser u, BKItem a) => a.CanOpenFile();
+		private static bool IsAsset(in ItemActionContext ctx) => ctx.item.ItemType == EBKItemType.Asset;
+		private static bool IsExternal(in ItemActionContext ctx) => ctx.item.ItemType == EBKItemType.External;
+		private static bool CanOpenItem(in ItemActionContext ctx) => ctx.item.CanOpenFile();
+
+		private struct ItemActionContext
+		{
+			public BKItem item;
+			public BKUser user;
+		}
 
 		// declared here for convenience
 		private static readonly (GUIContent, AssetContextGuard, AssetContextFn)[] _ASSET_CTX_ACTIONS =
 		{
-			(new GUIContent("Copy GUID"), IsAsset, (_,a) =>
+			(new GUIContent("Copy/GUID"), IsAsset, (in ItemActionContext ctx) =>
 			{
-				GUIUtility.systemCopyBuffer = a.GUID;
+				ctx.item.GUID.CopyToClipboard();
 			}),
-			(new GUIContent("Copy Path"), null, (_,a) =>
+			(new GUIContent("Copy/Path"), null, (in ItemActionContext ctx) =>
 			{
-				GUIUtility.systemCopyBuffer = a.FilePath;
+				ctx.item.FilePath.CopyToClipboard();
 			}),
-			(new GUIContent("Copy Type"), IsAsset, (_,a) =>
+			(new GUIContent("Copy/Type"), IsAsset, (in ItemActionContext ctx) =>
 			{
-				GUIUtility.systemCopyBuffer = a.MainType.Name;
+				ctx.item.MainType.Name.CopyToClipboard();
 			}),
 			default,
-			(new GUIContent("Exclude"), null, (u,a) =>
+			(new GUIContent("Exclude"), null, (in ItemActionContext ctx) =>
 			{
+				var a = ctx.item;
+				var u = ctx.user;
 				if (a.ItemType == EBKItemType.Asset)
 				{
 					u.RemoveRef(a.GUID);
@@ -67,11 +76,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				{
 					u.RemoveRef(a.FilePath);
 				}
-			}),
-			(null, CanOpenItem, null),
-			(new GUIContent("Open..."), CanOpenItem, (u,a) =>
-			{
-				a.Open();
 			}),
 		};
 
@@ -91,6 +95,12 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 		}
 
+		private void RefreshTitleContent()
+		{
+			titleContent.text = _bkUser.GetDisplayTitle();
+			titleContent.image = _bkUser.GetDisplayIcon();
+		}
+
 		private void CreateGUI()
 		{
 			_viewData.user = _bkUser;
@@ -98,17 +108,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 			var tmp = LoadGUID<VisualTreeAsset>(BKConstants.WIN_TEMPLATE_GUID);
 			var win = tmp.Instantiate();
-
-			// win.RegisterCallbackOnce<DragEnterEvent>(ev =>
-			// {
-			// 	
-			// 	Debug.Log("drag enter");
-			// });
-			//
-			// win.RegisterCallbackOnce<DragPerformEvent>(ev =>
-			// {
-			// 	Debug.Log("drag perform");
-			// });
 
 			win.dataSource = _viewData;
 
@@ -145,6 +144,12 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		{
 			el.userData = _viewData.items[i].item;
 
+			EditorApplication.delayCall += () =>
+			{
+				var typeIcon = el.Q<Image>(className: "sm-bookmarks__item__type-icon");
+				typeIcon.MarkDirtyRepaint();
+			};
+
 			// register handlers only once
 			if (!el.ClassListContains("events"))
 			{
@@ -161,7 +166,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				};
 
 				var dblClickManip = new DoubleClickManipulator();
-				dblClickManip.onClick += e =>
+				dblClickManip.onClick += _ =>
 				{
 					if (el.userData is BKItem item && item.CanOpenFile())
 					{
@@ -202,9 +207,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			}
 			_itemList?.Rebuild();
 			_itemList?.MarkDirtyRepaint();
-			titleContent = new GUIContent(_bkUser.GetDisplayTitle(), _bkUser.GetDisplayIcon());
 
 			_filterBtn?.Q<Image>()?.MarkDirtyRepaint();
+			
+			RefreshTitleContent();
+
 		}
 
 		private void OnItemContext(BKItem a)
@@ -214,9 +221,15 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 				return;
 			}
 			var m = new GenericMenu();
+
+			var ctx = new ItemActionContext
+			{
+				item = a,
+				user = _bkUser
+			};
 			foreach (var (l, guardFn, fn) in _ASSET_CTX_ACTIONS)
 			{
-				if (guardFn != null && !guardFn.Invoke(_bkUser, a))
+				if (guardFn != null && !guardFn.Invoke(ctx))
 				{
 					continue;
 				}
@@ -225,7 +238,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 					m.AddSeparator(string.Empty);
 					continue;
 				}
-				m.AddItem(l, false, () => fn.Invoke(_bkUser, a));
+				m.AddItem(l, false, () => fn.Invoke(ctx));
 			}
 			m.ShowAsContext();
 		}
@@ -236,10 +249,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			{
 				return;
 			}
-			var sz = BKUtils.FormatFileSize(a.FileSize);
-			var path = BKUtils.AbbreviateFilePath(a.FilePath);
-			var txt = $"{path} // {sz}";
-			_viewData.footerText = txt;
 			a.Select();
 			_viewData.prefs.lastClicked = a;
 		}
@@ -278,7 +287,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			
 			m.AddSeparator(string.Empty);
 
-			m.AddItem(new GUIContent("File..."), false, OpenFilePicker);
+			m.AddItem(_LB_OPEN, false, OpenFilePicker);
 
 			if (ev.target is VisualElement _)
 			{
@@ -319,7 +328,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			_bkUser.viewChanged -= OnViewChanged;
 			_bkUser.viewChanged += OnViewChanged;
 			titleContent = new GUIContent(_bkUser.GetDisplayTitle(), _bkUser.GetDisplayIcon());
-			OnViewChanged();
+			EditorApplication.delayCall += OnViewChanged;
 		}
 
 		private void OnDisable()

@@ -119,10 +119,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			return CurrentFilter?.Icon ?? Profile?.ProfileIcon ?? DEFAULT_ICON.Value;
 		}
 
-		private static readonly Lazy<Texture> DEFAULT_ICON = new(() =>
-		{
-			return BKUtils.LoadTexture(BKConstants.ICO_GUID_WINDOW);
-		});
+		private static readonly Lazy<Texture> DEFAULT_ICON = new(() => BKUtils.LoadTexture(BKConstants.ICO_GUID_WINDOW));
 
 		[SerializeField] private string _filePath = DEF_FILE; // path to bookmarks file relative to project folder
 		[SerializeField] private string _viewKey; // view key, if it exists

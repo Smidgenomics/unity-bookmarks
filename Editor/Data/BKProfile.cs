@@ -6,7 +6,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 	using System;
 	using System.Collections.Generic;
 	using System.IO;
-	using UnityEditor;
 	using UnityEngine;
 
 	/// <summary>
@@ -28,13 +27,12 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		public bool TryGetIcon(string key, out LoadedIcon icon)
 		{
-			if (_fileIcons.TryGetValue(key, out var ico))
+			if (_iconRules == null)
 			{
-				icon = ico.GetIcon();
-				return true;
+				icon = default;
+				return false;
 			}
-			icon = default;
-			return false;
+			return _iconRules.TryGetIconByPath(key, out icon);
 		}
 
 		public bool AddRef(string guid)
@@ -73,6 +71,11 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			_icon = new CachedLoad<Texture>(LoadProfileIcon);
 		}
 
+		public void RebuildIcons()
+		{
+			_iconRules = new IconRules(_fileIcons);
+		}
+
 		public static BKProfile LoadFromPath(string path)
 		{
 			if (!File.Exists(path))
@@ -88,6 +91,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			profile.FilePath = fPath;
 			profile._lastEdited = BKUtils.GetLastFileEditTime(profile.FilePath);
 			profile.ProjectPath = path;
+			profile.RebuildIcons();
 			return profile;
 		}
 
@@ -214,6 +218,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 		[JsonProperty("fileIcons")]
 		private Dictionary<string, BKIconSettings> _fileIcons = new();
 
+		private IconRules _iconRules;
+
 		public BKViewFilter[] Filters => _filters;
 
 		public BKInclude Include => _include;
@@ -223,9 +229,6 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 
 		// Filtered views
 		[JsonProperty("filters")] private BKViewFilter[] _filters = Array.Empty<BKViewFilter>();
-
-		
-
 
 		public Texture ProfileIcon => _icon.Value;
 		private CachedLoad<Texture> _icon;
@@ -259,6 +262,7 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			{
 				var json = File.ReadAllText(FilePath);
 				JsonConvert.PopulateObject(json, this);
+				RebuildIcons();
 			}
 			catch
 			{

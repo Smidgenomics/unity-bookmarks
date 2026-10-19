@@ -1,0 +1,45 @@
+{
+	"title":"Settings",
+	"sort": "e,n",
+	"icon":"UnityLogo",
+	"fileIcons":{
+		"*Settings/*.asset":{
+			"tex":"UnityLogo"
+		}
+	},
+	"include":{
+		"refs":[
+		],
+		"queries":[
+			{
+				"filter":"*.asset",
+				"folders":[
+					"ProjectSettings",
+					"UserSettings"
+				]
+			}
+		]
+	},
+	"filters":[
+		{
+			"key": "psettings",
+			"title": "Project Settings",
+			"icon":"UnityLogo",
+			"sort": "n",
+			"op":"&",
+			"rules":[
+				"p:ProjectSettings/*.asset"
+			]
+		},
+		{
+			"key": "usettings",
+			"title": "User Settings",
+			"icon":"UnityLogo",
+			"sort": "n",
+			"op":"&",
+			"rules":[
+				"p:UserSettings/*.asset"
+			]
+		}
+	]
+}

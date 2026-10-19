@@ -19,6 +19,8 @@ namespace Smidgenomics.Unity.Bookmarks.Editor
 			IsValueCreated = false;
 		}
 
+		public static implicit operator CachedLoad<T>(Func<T> fn) => new(fn);
+
 		private static T DefaultGetter() => default;
 
 		private delegate T Getter(ref CachedLoad<T> v);
