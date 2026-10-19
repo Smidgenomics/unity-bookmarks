@@ -1,6 +1,6 @@
 {
   "name": "com.smidgenomics.unity-bookmarks",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "SM Bookmarks",
   "description": "Asset bookmarks",
   "license": "NON-AI-MIT",
@@ -18,5 +18,8 @@
   "documentationUrl": "https://github.com/Smidgenomics/unity-bookmarks",
   "licensesUrl": "https://github.com/Smidgenomics/unity-bookmarks/blob/master/LICENSE.md",
   "changelogUrl": "https://github.com/Smidgenomics/unity-bookmarks/blob/master/CHANGELOG.md",
-  "unityRelease": "62f2"
+  "unityRelease": "62f2",
+  "dependencies": {
+    "com.unity.modules.uielements": "0.1.0"
+  }
 }
